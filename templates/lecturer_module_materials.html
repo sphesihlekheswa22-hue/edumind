@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-book"></i> {{ module.title }}</h2>
+            <p class="text-muted mb-0">Manage learning materials</p>
+        </div>
+        <a href="{{ url_for('lecturer_module_students', module_id=module.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Students
+        </a>
+    </div>
+
+    <!-- Add Material Form -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-plus"></i> Add New Material</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Title</label>
+                    <input type="text" name="title" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Content Type</label>
+                    <select name="content_type" class="form-select" required>
+                        <option value="slide">Slide/Presentation</option>
+                        <option value="pdf">PDF Document</option>
+                        <option value="document">Word Document</option>
+                        <option value="video">Video</option>
+                        <option value="excel">Excel/Spreadsheet</option>
+                        <option value="link">External Link</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Order/Chapter</label>
+                    <input type="text" name="chapter_topic" class="form-control" placeholder="e.g., Chapter 1">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Upload File (Optional)</label>
+                    <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx,.txt,.rtf,.mp4,.webm,.avi,.mov,.mkv,.xls,.xlsx,.csv,.ppt,.pptx">
+                    <small class="text-muted">Allowed: PDF, Word, Excel, Video (MP4, WebM, AVI), PowerPoint</small>
+                </div>
+                <div class="col-12" id="contentTextSection">
+                    <label class="form-label">Content (Text/Notes)</label>
+                    <textarea name="content_text" class="form-control" rows="4" placeholder="Enter content or notes..."></textarea>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Add Material
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Materials List -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Module Materials ({{ materials|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if materials %}
+            <div class="list-group">
+                {% for material in materials %}
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">
+                                {% if material.content_type == 'video' %}
+                                <i class="fas fa-video text-danger"></i>
+                                {% elif material.content_type == 'pdf' %}
+                                <i class="fas fa-file-pdf text-danger"></i>
+                                {% elif material.content_type == 'excel' %}
+                                <i class="fas fa-file-excel text-success"></i>
+                                {% elif material.content_type == 'slide' %}
+                                <i class="fas fa-images text-warning"></i>
+                                {% elif material.content_type == 'link' %}
+                                <i class="fas fa-link text-primary"></i>
+                                {% else %}
+                                <i class="fas fa-file-alt text-secondary"></i>
+                                {% endif %}
+                                {{ material.title }}
+                            </h6>
+                            <p class="mb-1 text-muted">{{ material.description }}</p>
+                            <small class="text-muted">
+                                {% if material.chapter_topic %}{{ material.chapter_topic }} | {% endif %}
+                                {{ material.content_type|title }}
+                            </small>
+                        </div>
+                        <div>
+                            {% if material.file_path %}
+                            <a href="{{ url_for('static', filename=material.file_path) }}" class="btn btn-sm btn-success" download>
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                            {% endif %}
+                            <a href="{{ url_for('student_module_materials', module_id=module.id) }}" class="btn btn-sm btn-outline-primary">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">No materials added yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

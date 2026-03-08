@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-comments"></i> Interview Practice</h2>
+        <a href="{{ url_for('student_career') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Career
+        </a>
+    </div>
+
+    <!-- Generate Questions Form -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-robot"></i> Generate AI Practice Questions</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label">Your Field/Industry</label>
+                    <input type="text" name="job_field" class="form-control" required
+                           placeholder="e.g., Software Engineering, Data Science, Marketing">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-dark w-100">
+                        <i class="fas fa-magic"></i> Generate Questions
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Practice Questions -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">My Practice Questions ({{ questions|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if questions %}
+            <div class="accordion" id="questionsAccordion">
+                {% for q in questions %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ q.id }}">
+                            <span class="badge bg-secondary me-2">#{{ loop.index }}</span>
+                            {{ q.question }}
+                            {% if q.practice_count > 0 %}
+                            <span class="badge bg-info ms-2">Practiced {{ q.practice_count }}x</span>
+                            {% endif %}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ q.id }}" class="accordion-collapse collapse" data-bs-parent="#questionsAccordion">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <strong><i class="fas fa-star text-warning"></i> Ideal Answer:</strong>
+                                <p class="mt-2">{{ q.ideal_answer }}</p>
+                            </div>
+                            
+                            <form method="POST" action="{{ url_for('student_practice_interview', question_id=q.id) }}">
+                                <div class="mb-3">
+                                    <label class="form-label">Your Answer:</label>
+                                    <textarea name="user_answer" class="form-control" rows="3" 
+                                              placeholder="Practice your answer here...">{{ q.user_answer or '' }}</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-save"></i> Save Answer
+                                </button>
+                            </form>
+                            
+                            {% if q.last_practiced %}
+                            <small class="text-muted mt-2 d-block">
+                                {% if q.last_practiced is string %}
+                                Last practiced: {{ q.last_practiced }}
+                                {% else %}
+                                Last practiced: {{ q.last_practiced.strftime('%Y-%m-%d %H:%M') }}
+                                {% endif %}
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No practice questions yet. 
+                Generate questions based on your field to start practicing!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

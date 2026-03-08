@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Available Quizzes - EduMind AI{% endblock %}
+{% block page_title %}Available Quizzes{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Filters -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filters</h5>
+            <div class="card-body">
+                <form method="GET">
+                    <div class="mb-3">
+                        <label class="form-label">Course</label>
+                        <select name="course_id" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Courses</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}" {% if selected_course == course.id|string %}selected{% endif %}>{{ course.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
+                            <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="not_started" {% if selected_status == 'not_started' %}selected{% endif %}>Not Started</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="card mt-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Your Quiz Stats</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Available</span>
+                    <strong>{{ total_available }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Completed</span>
+                    <strong>{{ completed_count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Average Score</span>
+                    <strong>{{ "%.0f"|format(avg_score) }}%</strong>
+                </div>
+                <hr>
+                <a href="/courses" class="btn btn-success w-100">
+                    <i class="bi bi-magic me-2"></i>Generate AI Quiz
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quiz List -->
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-patch-question me-2"></i>Available Quizzes</h5>
+                <span class="text-muted">{{ quizzes|length }} quizzes</span>
+            </div>
+            <div class="card-body">
+                {% if quizzes %}
+                <div class="list-group">
+                    {% for quiz in quizzes %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center">
+                                    <h5 class="mb-1">{{ quiz.title }}</h5>
+                                    {% if quiz.status == 'completed' %}
+                                    <span class="badge bg-success ms-2">Completed</span>
+                                    {% elif quiz.status == 'in_progress' %}
+                                    <span class="badge bg-warning ms-2">In Progress</span>
+                                    {% else %}
+                                    <span class="badge bg-primary ms-2">Available</span>
+                                    {% endif %}
+                                </div>
+                                <p class="mb-1 text-muted">{{ quiz.description }}</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-book me-1"></i>{{ quiz.course_title }}
+                                    {% if quiz.total_questions %}
+                                    <span class="mx-2">|</span>
+                                    <i class="bi bi-question-circle me-1"></i>{{ quiz.total_questions }} Questions
+                                    {% endif %}
+                                    {% if quiz.difficulty %}
+                                    <span class="mx-2">|</span>
+                                    <i class="bi bi-speedometer2 me-1"></i>{{ quiz.difficulty|title }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                {% if quiz.status == 'completed' %}
+                                <div class="mb-2">
+                                    {% if quiz.score is defined and quiz.total_questions is defined and quiz.total_questions %}
+                                    <span class="badge bg-{{ 'success' if (quiz.score/quiz.total_questions*100) >= 70 else 'warning' if (quiz.score/quiz.total_questions*100) >= 50 else 'danger' }}">
+                                        {{ quiz.score }}/{{ quiz.total_questions }} ({{ (quiz.score/quiz.total_questions*100)|int }}%)
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                    {% endif %}
+                                </div>
+                                <a href="/quiz-results/{{ quiz.result_id }}" class="btn btn-sm btn-outline-info">View Result</a>
+                                <a href="/quizzes/{{ quiz.id }}" class="btn btn-sm btn-outline-primary">Retake</a>
+                                {% else %}
+                                <a href="/quizzes/{{ quiz.id }}" class="btn btn-primary">Start Quiz</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-patch-question display-1 text-muted"></i>
+                    <h4 class="mt-3">No Quizzes Found</h4>
+                    <p class="text-muted">
+                        {% if selected_course or selected_status %}
+                        Try adjusting your filters or 
+                        {% endif %}
+                        Enroll in courses to access quizzes!
+                    </p>
+                    <a href="/courses" class="btn btn-primary">Browse Courses</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recent Results -->
+        {% if recent_results %}
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Quiz Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Quiz</th>
+                                <th>Course</th>
+                                <th>Score</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in recent_results %}
+                            <tr>
+                                <td>{{ result.quiz_title }}</td>
+                                <td>{{ result.course_title }}</td>
+                                <td>
+                                    {% if result.score is defined and result.total_questions is defined and result.total_questions %}
+                                    <span class="badge bg-{{ 'success' if (result.score/result.total_questions*100) >= 70 else 'warning' if (result.score/result.total_questions*100) >= 50 else 'danger' }}">
+                                        {{ result.score }}/{{ result.total_questions }} ({{ (result.score/result.total_questions*100)|int }}%)
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ result.completed_at[:10] if result.completed_at else 'N/A' }}</td>
+                                <td>
+                                    <a href="/quiz-results/{{ result.id }}" class="btn btn-sm btn-outline-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

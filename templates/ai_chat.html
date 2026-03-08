@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}AI Study Assistant - EduMind AI{% endblock %}
+{% block page_title %}AI Study Assistant{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Select Course</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="courseForm">
+                    <select name="course_id" class="form-select" onchange="updateModules(this.value)">
+                        <option value="">General Chat</option>
+                        {% for course in courses %}
+                        <option value="{{ course.id }}" {% if selected_course == course.id|string %}selected{% endif %}>{{ course.title }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </div>
+        
+        {% if modules %}
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Select Module</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="moduleForm">
+                    <input type="hidden" name="course_id" value="{{ selected_course }}">
+                    <select name="module_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Modules</option>
+                        {% for module in modules %}
+                        <option value="{{ module.id }}" {% if selected_module == module.id|string %}selected{% endif %}>{{ module.title }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Weak Areas Alert -->
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-1"></i>Your Weak Areas</h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">Topics where you scored below 60%:</p>
+                <div id="weakAreasList">
+                    <span class="badge bg-secondary">Chat to see recommendations</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-white d-flex align-items-center">
+                <i class="bi bi-robot me-2 text-primary" style="font-size: 1.5rem;"></i>
+                <h5 class="mb-0">AI Study Assistant</h5>
+                {% if selected_module %}
+                <span class="badge bg-info ms-2">Module Context</span>
+                {% elif selected_course %}
+                <span class="badge bg-primary ms-2">Course Context</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2">General</span>
+                {% endif %}
+            </div>
+            <div class="card-body" style="height: 400px; overflow-y: auto;" id="chat-container">
+                <div class="text-center py-4">
+                    <i class="bi bi-robot display-1 text-primary"></i>
+                    <p class="mt-3">Hello! I'm your AI study assistant. Ask me anything about your courses or study materials!</p>
+                    <p class="text-muted small">Select a course and module to get context-aware answers based on your study materials.</p>
+                </div>
+                
+                {% for chat in chats %}
+                <div class="mb-3 {% if chat.user_id == session['user_id'] %}text-end{% endif %}">
+                    <div class="d-inline-block p-3 rounded {% if chat.user_id == session['user_id'] %}bg-primary text-white{% else %}bg-light{% endif %}" style="max-width: 80%;">
+                        <p class="mb-1"><strong>{% if chat.user_id == session['user_id'] %}You{% else %}AI{% endif %}:</strong></p>
+                        <p class="mb-0">{{ chat.user_message }}</p>
+                        {% if chat.bot_response %}
+                        <hr class="{% if chat.user_id == session['user_id'] %}border-white{% else %}{% endif %}">
+                        <p class="mb-0"><strong>AI:</strong> {{ chat.bot_response }}</p>
+                        {% endif %}
+                        <small class="{% if chat.user_id == session['user_id'] %}text-white-50{% else %}text-muted{% endif %}">{{ chat.created_at[:16] }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer bg-white">
+                <form method="POST">
+                    {% if selected_course %}
+                    <input type="hidden" name="course_id" value="{{ selected_course }}">
+                    {% endif %}
+                    {% if selected_module %}
+                    <input type="hidden" name="module_id" value="{{ selected_module }}">
+                    {% endif %}
+                    <div class="input-group">
+                        <input type="text" name="message" class="form-control" placeholder="Ask me anything about your course..." required>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Ask</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateModules(courseId) {
+    if (courseId) {
+        document.getElementById('courseForm').submit();
+    } else {
+        window.location.href = '/ai-chat';
+    }
+}
+
+// Auto-scroll to bottom of chat
+document.addEventListener('DOMContentLoaded', function() {
+    var container = document.getElementById('chat-container');
+    container.scrollTop = container.scrollHeight;
+});
+</script>
+{% endblock %}

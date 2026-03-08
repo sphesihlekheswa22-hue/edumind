@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Enroll Student - EduMind AI{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <!-- Page Header -->
+    <div class="page-header mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1><i class="bi bi-person-check"></i> Course Enrollment</h1>
+                <p class="text-muted">Enroll {{ student['name'] }} in courses</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('student_detail', id=student['id']) }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Student
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Info -->
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Student Information</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Name:</strong> {{ student['name'] }}</p>
+            <p><strong>Email:</strong> {{ student['email'] }}</p>
+            <p><strong>Course:</strong> {{ student['course'] }}</p>
+        </div>
+    </div>
+
+    <!-- Enroll Form -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Available Courses</h5>
+                </div>
+                <div class="card-body">
+                    {% if available_courses %}
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="course_id" class="form-label">Select Course</label>
+                            <select class="form-select" id="course_id" name="course_id" required>
+                                <option value="">Choose a course...</option>
+                                {% for course in available_courses %}
+                                <option value="{{ course['id'] }}">{{ course['name'] }} ({{ course['code'] }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Enroll Student
+                        </button>
+                    </form>
+                    {% else %}
+                    <p class="text-muted">No available courses to enroll.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Currently Enrolled</h5>
+                </div>
+                <div class="card-body">
+                    {% if enrolled_courses %}
+                    <ul class="list-group">
+                        {% for course in enrolled_courses %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ course['name'] }}
+                            <span class="badge bg-primary rounded-pill">{{ course['code'] }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">Not enrolled in any courses yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

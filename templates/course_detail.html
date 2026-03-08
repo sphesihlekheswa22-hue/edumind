@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }} - EduMind AI{% endblock %}
+{% block page_title %}{{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-8">
+        <!-- Course Info -->
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-1">{{ course.title }}</h4>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-person me-1"></i>{{ course.teacher_name }}
+                        {% if course.subject %}<span class="mx-2">|</span><i class="bi bi-tag me-1"></i>{{ course.subject }}{% endif %}
+                        {% if course.course_code %}<span class="mx-2">|</span><i class="bi bi-hash me-1"></i>{{ course.course_code }}{% endif %}
+                    </p>
+                </div>
+                <div>
+                    {% if can_access %}
+                    <span class="badge bg-success">Enrolled</span>
+                    {% elif session.role == 'student' and not enrollment %}
+                    <a href="/enroll/{{ course.id }}" class="btn btn-success">Enroll Now</a>
+                    {% elif enrollment and enrollment.status == 'pending' %}
+                    <span class="badge bg-warning">Pending Approval</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <h5>Description</h5>
+                <p>{{ course.description or 'No description provided.' }}</p>
+            </div>
+        </div>
+        
+        <!-- Modules in this Course -->
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-collection me-2"></i>Modules</h5>
+            </div>
+            <div class="card-body">
+                {% if modules %}
+                <div class="list-group">
+                    {% for module in modules %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    <span class="badge bg-secondary me-2">Ch. {{ module.chapter_number or '-' }}</span>
+                                    {{ module.title }}
+                                </h6>
+                                <small class="text-muted">{{ (module.description or '')[:100] }}...</small>
+                                {% if module.student_count %}
+                                <br><small class="text-info"><i class="bi bi-people me-1"></i>{{ module.student_count }} students</small>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if can_access %}
+                                    {% if student_module_enrollments and student_module_enrollments[module.id] == 'approved' %}
+                                    <a href="/modules/{{ module.id }}" class="btn btn-sm btn-success">View Module</a>
+                                    {% elif student_module_enrollments and student_module_enrollments[module.id] == 'pending' %}
+                                    <span class="badge bg-warning">Request Pending</span>
+                                    {% elif session.role == 'student' %}
+                                    <a href="/student/modules/{{ module.id }}/request" class="btn btn-sm btn-outline-primary">Enroll in Module</a>
+                                    {% else %}
+                                    <a href="/modules/{{ module.id }}" class="btn btn-sm btn-primary">View Module</a>
+                                    {% endif %}
+                                {% else %}
+                                <small class="text-muted">Enroll in course to access</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No modules available in this course yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- For Lecturers - Show their modules in this course -->
+        {% if lecturer_modules and session.role == 'lecturer' %}
+        <div class="card mb-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-chalkboard-teacher me-2"></i>Your Modules in This Course</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for module in lecturer_modules %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ module.title }}</h6>
+                            <small class="text-muted">{{ (module.description or '')[:80] }}...</small>
+                        </div>
+                        <div>
+                            <a href="/lecturer/modules/{{ module.id }}/materials" class="btn btn-sm btn-primary">Manage Materials</a>
+                            <a href="/lecturer/modules/{{ module.id }}/students" class="btn btn-sm btn-info">Students</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Actions -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                {% if can_access %}
+                <a href="/ai-chat?course={{ course.id }}" class="btn btn-success w-100 mb-2"><i class="bi bi-robot me-2"></i>AI Study Assistant</a>
+                {% endif %}
+                
+                {% if session.role in ['teacher', 'admin'] or course.teacher_id == session.user_id %}
+                <a href="/courses/{{ course.id }}/edit" class="btn btn-primary w-100 mb-2"><i class="bi bi-pencil me-2"></i>Edit Course</a>
+                <a href="/courses/{{ course.id }}/delete" class="btn btn-danger w-100" onclick="return confirm('Are you sure?')"><i class="bi bi-trash me-2"></i>Delete Course</a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Enrolled Students (for teachers) -->
+        {% if enrolled_students and (session.role in ['teacher', 'admin']) %}
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-people me-2"></i>Enrolled Students ({{ enrolled_students|length }})</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    {% for student in enrolled_students %}
+                    <li class="py-2 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ student.full_name }}</strong><br>
+                                <small class="text-muted">{{ student.username }}</small>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

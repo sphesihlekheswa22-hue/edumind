@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Student - EduMind AI{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <!-- Page Header -->
+    <div class="page-header mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1><i class="bi bi-person-plus"></i> {{ action }} Student</h1>
+                <p class="text-muted">{{ action }} a student record in the system</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="name" class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required 
+                               value="{{ student['name'] if student else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="email" class="form-label">Email Address *</label>
+                        <input type="email" class="form-control" id="email" name="email" required 
+                               value="{{ student['email'] if student else '' }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" id="phone" name="phone" 
+                               value="{{ student['phone'] if student else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="course" class="form-label">Course/Program</label>
+                        <select class="form-select" id="course" name="course">
+                            <option value="">Select Course</option>
+                            <option value="Computer Science" {% if student and student['course'] == 'Computer Science' %}selected{% endif %}>Computer Science</option>
+                            <option value="Engineering" {% if student and student['course'] == 'Engineering' %}selected{% endif %}>Engineering</option>
+                            <option value="Mathematics" {% if student and student['course'] == 'Mathematics' %}selected{% endif %}>Mathematics</option>
+                            <option value="Physics" {% if student and student['course'] == 'Physics' %}selected{% endif %}>Physics</option>
+                            <option value="Chemistry" {% if student and student['course'] == 'Chemistry' %}selected{% endif %}>Chemistry</option>
+                            <option value="Biology" {% if student and student['course'] == 'Biology' %}selected{% endif %}>Biology</option>
+                            <option value="Business" {% if student and student['course'] == 'Business' %}selected{% endif %}>Business</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="year" class="form-label">Year of Study</label>
+                        <select class="form-select" id="year" name="year">
+                            <option value="1" {% if student and student['year'] == 1 %}selected{% endif %}>Year 1</option>
+                            <option value="2" {% if student and student['year'] == 2 %}selected{% endif %}>Year 2</option>
+                            <option value="3" {% if student and student['year'] == 3 %}selected{% endif %}>Year 3</option>
+                            <option value="4" {% if student and student['year'] == 4 %}selected{% endif %}>Year 4</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {{ action }} Student
+                        </button>
+                        <a href="{{ url_for('students') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

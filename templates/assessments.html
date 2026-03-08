@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Assessments - EduMind AI{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <!-- Page Header -->
+    <div class="page-header mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1><i class="bi bi-file-earmark-text"></i> Assessment Management</h1>
+                <p class="text-muted">Record and track student assessments, tests, and exams</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Assessment Form -->
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Record Assessment</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="student_id" class="form-label">Student</label>
+                    <select class="form-select" id="student_id" name="student_id" required>
+                        <option value="">Select Student</option>
+                        {% for student in students %}
+                        <option value="{{ student['id'] }}">{{ student['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="course_id" class="form-label">Course</label>
+                    <select class="form-select" id="course_id" name="course_id" required>
+                        <option value="">Select Course</option>
+                        {% for course in courses %}
+                        <option value="{{ course['id'] }}">{{ course['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="assessment_type" class="form-label">Type</label>
+                    <select class="form-select" id="assessment_type" name="assessment_type" required>
+                        <option value="Test">Test</option>
+                        <option value="Assignment">Assignment</option>
+                        <option value="Exam">Exam</option>
+                        <option value="Quiz">Quiz</option>
+                        <option value="Project">Project</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" name="title" required placeholder="e.g., Quiz 1">
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="score" class="form-label">Score</label>
+                    <input type="number" step="0.1" class="form-control" id="score" name="score">
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="max_score" class="form-label">Max Score</label>
+                    <input type="number" step="0.1" class="form-control" id="max_score" name="max_score" value="100">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="due_date" class="form-label">Due Date</label>
+                    <input type="date" class="form-control" id="due_date" name="due_date">
+                </div>
+                <div class="col-md-7 mb-3">
+                    <label for="feedback" class="form-label">Feedback</label>
+                    <input type="text" class="form-control" id="feedback" name="feedback" placeholder="Optional feedback">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Record Assessment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assessment Records -->
+    <div class="card mt-4 mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Recent Assessment Records</h5>
+        </div>
+        <div class="card-body">
+            {% if assessments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                            <th>Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assessment in assessments %}
+                        <tr>
+                            <td>{{ assessment['student_name'] }}</td>
+                            <td>{{ assessment['course_name'] }}</td>
+                            <td>{{ assessment['assessment_type'] }}</td>
+                            <td>{{ assessment['title'] }}</td>
+                            <td>
+                                {% if assessment['score'] %}
+                                <span class="badge {% if assessment['score'] >= 70 %}bg-success{% elif assessment['score'] >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ "%.1f"|format(assessment['score']) }}/{{ assessment['max_score'] }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ assessment['submitted_date'] or assessment['due_date'] }}</td>
+                            <td>{{ assessment['feedback'] or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No assessment records yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - EduMind AI{% endblock %}
+{% block page_title %}Messages{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Conversations</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if conversations %}
+        <div class="list-group list-group-flush">
+            {% for conv in conversations %}
+            <a href="/messages/{{ conv.other_user_id }}" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px;">
+                            {{ conv.username[0]|upper }}
+                        </div>
+                        <div>
+                            <h6 class="mb-0">{{ conv.full_name or conv.username }}</h6>
+                            <small class="text-muted">{{ (conv.last_message or '')[:50] }}...</small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        {% if conv.unread_count > 0 %}
+                        <span class="badge bg-primary">{{ conv.unread_count }}</span>
+                        {% endif %}
+                        <br><small class="text-muted">{{ conv.role }}</small>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-chat-square-text display-4 text-muted"></i>
+            <p class="text-muted mt-3">No messages yet. Start a conversation from a course page.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

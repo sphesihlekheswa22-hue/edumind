@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Parent Dashboard - EduMind AI{% endblock %}
+{% block page_title %}Parent Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-people me-2"></i>My Children's Progress</h5>
+            </div>
+            <div class="card-body">
+                {% if children_data %}
+                    {% for child in children_data %}
+                    <div class="border-bottom pb-4 mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if child.info.profile_picture %}
+                            <img src="{{ child.info.profile_picture }}" alt="{{ child.info.username }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                                {{ child.info.username[0]|upper }}
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h4 class="mb-0">{{ child.info.full_name or child.info.username }}</h4>
+                                <p class="text-muted mb-0">Student</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Summary Cards -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h5 class="mb-0">{{ child.courses|length }}</h5>
+                                    <small class="text-muted">Enrolled Courses</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h5 class="mb-0">{{ "%.0f"|format(child.avg_score) }}%</h5>
+                                    <small class="text-muted">Avg. Quiz Score</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h5 class="mb-0">
+                                        <span class="badge bg-{{ 'success' if child.risk_level == 'Low' else 'warning' if child.risk_level == 'Medium' else 'danger' }}">
+                                            {{ child.risk_level }}
+                                        </span>
+                                    </h5>
+                                    <small class="text-muted">Risk Level</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h5 class="mb-0">{{ child.activity_count }}</h5>
+                                    <small class="text-muted">Activities (30 days)</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h6>Enrolled Courses ({{ child.courses|length }})</h6>
+                        {% if child.courses %}
+                        <div class="row g-3 mt-2">
+                            {% for course in child.courses %}
+                            <div class="col-md-4">
+                                <div class="border rounded p-3">
+                                    <h6>{{ course.title }}</h6>
+                                    <p class="text-muted small mb-0">Teacher: {{ course.teacher_name }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No courses enrolled yet.</p>
+                        {% endif %}
+                        
+                        <h6 class="mt-4">Recent Quiz Results</h6>
+                        {% if child.quizzes %}
+                        <div class="table-responsive mt-2">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Quiz</th>
+                                        <th>Score</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for quiz in child.quizzes %}
+                                    <tr>
+                                        <td>{{ quiz.title }}</td>
+                                        <td>
+                                            {% if quiz.score is not none %}
+                                            <span class="badge bg-{{ 'success' if (quiz.score/quiz.total_questions*100) >= 70 else 'warning' if (quiz.score/quiz.total_questions*100) >= 50 else 'danger' }}">
+                                                {{ quiz.score }}/{{ quiz.total_questions }}
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Pending</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ quiz.completed_at[:10] }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No quizzes taken yet.</p>
+                        {% endif %}
+                        
+                        <!-- Quick Actions -->
+                        <div class="mt-4">
+                            <h6>Quick Actions</h6>
+                            <div class="d-flex gap-2 mt-2">
+                                <a href="/messages?student_id={{ child.info.id }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-chat-dots me-1"></i> Message Teacher
+                                </a>
+                                <a href="/student/{{ child.info.id }}" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-eye me-1"></i> View Full Profile
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p class="text-muted text-center py-4">No children linked to your account.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

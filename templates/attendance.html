@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - EduMind AI{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <!-- Page Header -->
+    <div class="page-header mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1><i class="bi bi-calendar-check"></i> Attendance Management</h1>
+                <p class="text-muted">Record and track student attendance</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Attendance Form -->
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Record Attendance</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="student_id" class="form-label">Student</label>
+                    <select class="form-select" id="student_id" name="student_id" required>
+                        <option value="">Select Student</option>
+                        {% for student in students %}
+                        <option value="{{ student['id'] }}">{{ student['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="course_id" class="form-label">Course</label>
+                    <select class="form-select" id="course_id" name="course_id" required>
+                        <option value="">Select Course</option>
+                        {% for course in courses %}
+                        <option value="{{ course['id'] }}">{{ course['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date" name="date" required 
+                           value="{{ '' }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status" required>
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Late">Late</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Record Attendance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attendance Records -->
+    <div class="card mt-4 mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Recent Attendance Records</h5>
+        </div>
+        <div class="card-body">
+            {% if attendance_records %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance_records %}
+                        <tr>
+                            <td>{{ record['date'] }}</td>
+                            <td>{{ record['student_name'] }}</td>
+                            <td>{{ record['course_name'] }}</td>
+                            <td>
+                                <span class="badge {% if record['status'] == 'Present' %}bg-success{% elif record['status'] == 'Late' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ record['status'] }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No attendance records yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

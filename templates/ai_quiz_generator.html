@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}AI Quiz Generator - EduMind AI{% endblock %}
+{% block page_title %}AI Quiz Generator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-patch-question me-2 text-primary"></i>Generate AI Quiz for: {{ course.title }}</h5>
+            </div>
+            <div class="card-body">
+                {% if difficulty_message %}
+                <div class="alert alert-{{ 'success' if suggested_difficulty == 'hard' else 'warning' if suggested_difficulty == 'easy' else 'info' }}">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    <strong>Adaptive Learning:</strong> {{ difficulty_message }}
+                </div>
+                {% endif %}
+                
+                <form method="POST">
+                    <div class="mb-4">
+                        <label class="form-label">Number of Questions</label>
+                        <select name="num_questions" class="form-select">
+                            <option value="5">5 Questions</option>
+                            <option value="10">10 Questions</option>
+                            <option value="15">15 Questions</option>
+                            <option value="20">20 Questions</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Difficulty Level</label>
+                        <select name="difficulty" class="form-select">
+                            <option value="easy" {{ 'selected' if suggested_difficulty == 'easy' }}>Easy - Basic concepts</option>
+                            <option value="medium" {{ 'selected' if suggested_difficulty == 'medium' }}>Medium - Standard difficulty</option>
+                            <option value="hard" {{ 'selected' if suggested_difficulty == 'hard' }}>Hard - Advanced questions</option>
+                        </select>
+                        <small class="text-muted">The AI will adjust question complexity based on your past performance.</small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Note:</strong> This is an AI-generated quiz. Questions adapt based on your previous quiz scores.
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-robot me-2"></i>Generate Quiz</button>
+                    <a href="/courses/{{ course.id }}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">How Adaptive Quiz Works</h6>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li class="mb-2">System analyzes your past quiz scores</li>
+                    <li class="mb-2"><strong>High scores (≥80%)</strong> → Hard difficulty</li>
+                    <li class="mb-2"><strong>Average (50-79%)</strong> → Medium difficulty</li>
+                    <li class="mb-2"><strong>Low scores (&lt;50%)</strong> → Easy difficulty + study tips</li>
+                    <li class="mb-2">Questions adjust in complexity</li>
+                    <li class="mb-2">Get personalized recommendations</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

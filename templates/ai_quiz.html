@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}AI Quiz Generator - EduMind AI{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <!-- Page Header -->
+    <div class="page-header mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1><i class="bi bi-question-circle"></i> AI Quiz Generator</h1>
+                <p class="text-muted">Generate personalized quizzes for any course (Demo Mode)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Quiz Generator -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-magic"></i> Generate New Quiz</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="student_id" class="form-label">Student</label>
+                            <select class="form-select" id="student_id" name="student_id" required>
+                                <option value="">Select Student</option>
+                                {% for student in students %}
+                                <option value="{{ student['id'] }}">{{ student['name'] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="course_id" class="form-label">Course</label>
+                            <select class="form-select" id="course_id" name="course_id" required>
+                                <option value="">Select Course</option>
+                                {% for course in courses %}
+                                <option value="{{ course['id'] }}">{{ course['name'] }} ({{ course['code'] }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" name="action" value="generate" class="btn btn-primary">
+                            <i class="bi bi-magic"></i> Generate Quiz
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Quiz Result -->
+            {% if quiz_result %}
+            <div class="card mt-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Quiz Completed!</h5>
+                </div>
+                <div class="card-body text-center">
+                    <h2>Your Score: {{ quiz_result }}%</h2>
+                    <p class="text-muted">Great effort! Keep practicing to improve.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Quiz Preview -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Quiz Preview</h5>
+                </div>
+                <div class="card-body">
+                    {% if quiz_questions %}
+                    <form method="POST">
+                        <input type="hidden" name="student_id" value="{{ request.form.get('student_id') }}">
+                        <input type="hidden" name="course_id" value="{{ request.form.get('course_id') }}">
+                        
+                        {% for question in quiz_questions %}
+                        <div class="mb-4">
+                            <p><strong>Question {{ loop.index }}:</strong> {{ question['q'] }}</p>
+                            <div class="ms-3">
+                                {% for option in question['options'] %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_{{ loop.index }}" value="{{ option }}">
+                                    <label class="form-check-label" for="q{{ loop.index0 }}_{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <button type="submit" name="action" value="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Submit Quiz
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-question-circle" style="font-size: 4rem; color: #ccc;"></i>
+                        <h4 class="mt-3">No Quiz Generated</h4>
+                        <p class="text-muted">Select a student and course to generate a quiz</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info -->
+    <div class="card mt-4 mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Demo Mode Information</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Note:</strong> This AI Quiz Generator uses simulated questions for CT2 demonstration purposes.</p>
+            <p>In a production environment, this would integrate with:</p>
+            <ul>
+                <li>AI models (like GPT) to generate unique questions</li>
+                <li>Question banks with proper difficulty scaling</li>
+                <li>Adaptive learning algorithms</li>
+                <li>Detailed performance analytics</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

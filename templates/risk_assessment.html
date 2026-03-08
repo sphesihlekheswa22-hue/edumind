@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Assessment - EduMind AI{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <!-- Page Header -->
+    <div class="page-header mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1><i class="bi bi-exclamation-triangle"></i> Risk Assessment</h1>
+                <p class="text-muted">Monitor students at risk of failing or dropping out</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Summary -->
+    <div class="row mt-4">
+        {% set critical = risk_data|selectattr('risk_level', 'equalto', 'Critical')|list|length %}
+        {% set high = risk_data|selectattr('risk_level', 'equalto', 'High')|list|length %}
+        {% set medium = risk_data|selectattr('risk_level', 'equalto', 'Medium')|list|length %}
+        {% set low = risk_data|selectattr('risk_level', 'equalto', 'Low')|list|length %}
+        
+        <div class="col-md-3">
+            <div class="card text-center" style="background: #7f1d1d; color: white;">
+                <div class="card-body">
+                    <h2>{{ critical }}</h2>
+                    <p>Critical Risk</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center" style="background: #ef4444; color: white;">
+                <div class="card-body">
+                    <h2>{{ high }}</h2>
+                    <p>High Risk</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center" style="background: #f59e0b; color: white;">
+                <div class="card-body">
+                    <h2>{{ medium }}</h2>
+                    <p>Medium Risk</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center" style="background: #10b981; color: white;">
+                <div class="card-body">
+                    <h2>{{ low }}</h2>
+                    <p>Low Risk</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Table -->
+    <div class="card mt-4 mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">All Students Risk Assessment</h5>
+        </div>
+        <div class="card-body">
+            {% if risk_data %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Course</th>
+                            <th>Risk Score</th>
+                            <th>Risk Level</th>
+                            <th>Attendance</th>
+                            <th>Assessment</th>
+                            <th>Recommendations</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in risk_data %}
+                        <tr class="
+                            {% if student['risk_level'] == 'Critical' %}table-danger
+                            {% elif student['risk_level'] == 'High' %}table-warning
+                            {% elif student['risk_level'] == 'Medium' %}bg-light
+                            {% else %}table-success{% endif %}">
+                            <td>
+                                <a href="{{ url_for('student_detail', id=student['id']) }}">
+                                    <strong>{{ student['name'] }}</strong>
+                                </a>
+                            </td>
+                            <td>{{ student['course'] or '-' }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px; width: 100px;">
+                                    <div class="progress-bar 
+                                        {% if student['risk_score'] < 20 %}bg-success
+                                        {% elif student['risk_score'] < 40 %}bg-warning
+                                        {% elif student['risk_score'] < 60 %}bg-danger
+                                        {% else %}bg-dark{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ student['risk_score'] }}%">
+                                        {{ "%.0f"|format(student['risk_score']) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="risk-badge risk-badge-{{ student['risk_level']|lower }}">
+                                    {{ student['risk_level'] }}
+                                </span>
+                            </td>
+                            <td>{{ "%.1f"|format(student['attendance_score']) }}%</td>
+                            <td>{{ "%.1f"|format(student['assessment_score']) }}%</td>
+                            <td>
+                                <small>{{ student['recommendations'] or 'No recommendations' }}</small>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('student_detail', id=student['id']) }}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No risk assessment data available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

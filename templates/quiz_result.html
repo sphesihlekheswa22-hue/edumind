@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Result - EduMind AI{% endblock %}
+{% block page_title %}Quiz Result: {{ result.quiz_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header bg-white text-center">
+                <h4>Your Score</h4>
+                <h2 class="display-4 mb-0" style="color: {% if (result.score/result.total_questions*100) >= 70 %}#10b981{% elif (result.score/result.total_questions*100) >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">
+                    {{ result.score }}/{{ result.total_questions }} ({{ (result.score/result.total_questions*100)|int }}%)
+                </h2>
+            </div>
+        </div>
+        
+        {% if feedback %}
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-robot me-2 text-success"></i>AI Feedback</h5>
+            </div>
+            <div class="card-body">
+                <p>{{ feedback.feedback_text }}</p>
+                
+                {% if feedback.weak_topics %}
+                <h6 class="mt-3">Areas to Improve:</h6>
+                <ul>
+                    {% for topic in feedback.weak_topics %}
+                    <li>{{ topic }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                
+                {% if feedback.recommendations %}
+                <h6 class="mt-3">Recommendations:</h6>
+                <ul>
+                    {% for rec in feedback.recommendations %}
+                    <li>{{ rec }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Question Review</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Question</th>
+                                <th>Your Answer</th>
+                                <th>Correct Answer</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for q in questions %}
+                            <tr class="{% if q.answers and q.id|string in q.answers and q.answers[q.id|string].upper() == q.correct_answer.upper() %}table-success{% else %}table-danger{% endif %}">
+                                <td>{{ loop.index }}</td>
+                                <td>{{ q.question }}</td>
+                                <td>{{ q.answers[q.id|string] if q.answers and q.id|string in q.answers else 'Not answered' }}</td>
+                                <td>{{ q.correct_answer }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

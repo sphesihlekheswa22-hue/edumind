@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="fas fa-book-open"></i> My Modules</h2>
+
+    {% if courses %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> You need to be enrolled in a course before you can join its modules.
+    </div>
+    {% endif %}
+
+    {% if modules %}
+    <div class="row">
+        {% for mod in modules %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ mod.title }}</h5>
+                    <small class="text-muted">{{ mod.course_title }}</small>
+                </div>
+                <div class="card-body">
+                    <p>{{ mod.description or 'No description available.' }}</p>
+                    
+                    {% if mod.enrollment_status == 'approved' %}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success">Enrolled</span>
+                        <span class="badge bg-info">{{ mod.student_count }} Students</span>
+                    </div>
+                    {% elif mod.enrollment_status == 'pending' %}
+                    <span class="badge bg-warning">Request Pending</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Not Enrolled</span>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    {% if mod.enrollment_status == 'approved' %}
+                    <a href="{{ url_for('student_module_materials', module_id=mod.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-book"></i> View Materials
+                    </a>
+                    {% elif mod.enrollment_status == 'pending' %}
+                    <button class="btn btn-secondary btn-sm" disabled>
+                        <i class="fas fa-clock"></i> Request Pending
+                    </button>
+                    {% else %}
+                    <a href="{{ url_for('student_request_module', module_id=mod.id) }}" class="btn btn-success btn-sm"
+                       onclick="return confirm('Request to join this module?')">
+                        <i class="fas fa-plus"></i> Request to Join
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-circle"></i> 
+        {% if courses %}
+        No modules available in your enrolled courses yet. Check back later or contact your course instructor.
+        {% else %}
+        You need to enroll in a course first to access modules.
+        <a href="{{ url_for('courses') }}" class="btn btn-primary btn-sm ms-2">Browse Courses</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

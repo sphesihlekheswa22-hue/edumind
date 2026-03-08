@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        {% if module %}Edit Module{% else %}Create New Module{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Course</label>
+                            <select name="course_id" class="form-select" required>
+                                <option value="">Select a course...</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}" {% if module and module.course_id == course.id %}selected{% endif %}>
+                                    {{ course.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Module Code</label>
+                                <input type="text" name="code" class="form-control" 
+                                       value="{{ module.code or '' }}" placeholder="e.g., CS101">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Chapter Number</label>
+                                <input type="number" name="chapter_number" class="form-control" 
+                                       value="{{ module.chapter_number or '' }}" min="1">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Module Title</label>
+                            <input type="text" name="title" class="form-control" 
+                                   value="{{ module.title or '' }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="4">{{ module.description or '' }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Year</label>
+                                <input type="number" name="year" class="form-control" 
+                                       value="{{ module.year or '' }}" min="2020" max="2030" placeholder="e.g., 2024">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Semester</label>
+                                <select name="semester" class="form-select">
+                                    <option value="">Select semester...</option>
+                                    <option value="1" {% if module and module.semester == 1 %}selected{% endif %}>Semester 1</option>
+                                    <option value="2" {% if module and module.semester == 2 %}selected{% endif %}>Semester 2</option>
+                                    <option value="3" {% if module and module.semester == 3 %}selected{% endif %}>Semester 3</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Prerequisites</label>
+                                <input type="text" name="prerequisites" class="form-control" 
+                                       value="{{ module.prerequisites or '' }}" placeholder="Module codes, e.g., CS101, CS102">
+                            </div>
+                        </div>
+                        
+                        {% if module %}
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="is_active" class="form-check-input" id="isActive"
+                                   {% if module.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="isActive">Active</label>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin_modules') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {% if module %}Update{% else %}Create{% endif %} Module
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

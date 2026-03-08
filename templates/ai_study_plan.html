@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}AI Study Plan - EduMind AI{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <!-- Page Header -->
+    <div class="page-header mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1><i class="bi bi-calendar3"></i> AI Study Plan Generator</h1>
+                <p class="text-muted">Get personalized study plans tailored to your needs (Demo Mode)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Generator Form -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-magic"></i> Generate Study Plan</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="student_id" class="form-label">Student</label>
+                            <select class="form-select" id="student_id" name="student_id" required>
+                                <option value="">Select Student</option>
+                                {% for student in students %}
+                                <option value="{{ student['id'] }}">{{ student['name'] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="course_id" class="form-label">Course</label>
+                            <select class="form-select" id="course_id" name="course_id" required>
+                                <option value="">Select Course</option>
+                                {% for course in courses %}
+                                <option value="{{ course['id'] }}">{{ course['name'] }} ({{ course['code'] }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-magic"></i> Generate Plan
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Info -->
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> How It Works</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Demo Mode:</strong> This generates a 4-week study plan based on course content.</p>
+                    <p>A production version would:</p>
+                    <ul>
+                        <li>Analyze your performance data</li>
+                        <li>Adapt to your learning pace</li>
+                        <li>Include interactive content</li>
+                        <li>Track progress automatically</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Study Plan Display -->
+        <div class="col-md-8">
+            {% if study_plan %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-check2-square"></i> Your Personalized 4-Week Study Plan</h5>
+                </div>
+                <div class="card-body">
+                    {% for week, data in study_plan.items() %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Week {{ data['topics'].split(', ')|length }}: {{ data['goals'] }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6><strong>Topics to Cover:</strong></h6>
+                            <ul>
+                                {% for topic in data['topics'] %}
+                                <li>{{ topic }}</li>
+                                {% endfor %}
+                            </ul>
+                            <h6><strong>Activities:</strong></h6>
+                            <ul>
+                                {% for activity in data['activities'] %}
+                                <li>{{ activity }}</li>
+                                {% endfor %}
+                            </ul>
+                            <h6><strong>Weekly Goal:</strong></h6>
+                            <p>{{ data['goals'] }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-calendar3" style="font-size: 4rem; color: #ccc;"></i>
+                    <h4 class="mt-3">No Study Plan Generated</h4>
+                    <p class="text-muted">Select a student and course to generate a personalized study plan</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

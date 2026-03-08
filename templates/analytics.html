@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics & Reporting - EduMind AI{% endblock %}
+{% block page_title %}Analytics & Reporting{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Stats Overview -->
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <h3><i class="bi bi-people"></i></h3>
+            <h2>{{ total_students }}</h2>
+            <p>Total Students</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <h3><i class="bi bi-book"></i></h3>
+            <h2>{{ total_courses }}</h2>
+            <p>Total Courses</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <h3><i class="bi bi-clipboard-check"></i></h3>
+            <h2>{{ total_quizzes }}</h2>
+            <p>Quizzes Taken</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <h3><i class="bi bi-graph-up"></i></h3>
+            <h2>{{ "%.1f"|format(avg_score) }}%</h2>
+            <p>Avg. Quiz Score</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- Course Performance -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Course Enrollment Statistics</h5>
+                <a href="/export-analytics?type=courses" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download me-1"></i> Export CSV
+                </a>
+            </div>
+            <div class="card-body">
+                {% if course_stats %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Enrolled</th>
+                                <th>Avg. Score</th>
+                                <th>Completion Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in course_stats %}
+                            <tr>
+                                <td>{{ course.title }}</td>
+                                <td><span class="badge bg-primary">{{ course.enrolled_count }}</span></td>
+                                <td>
+                                    {% if course.avg_score %}
+                                    <span class="badge bg-{{ 'success' if course.avg_score >= 70 else 'warning' if course.avg_score >= 50 else 'danger' }}">
+                                        {{ "%.0f"|format(course.avg_score) }}%
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if course.completion_rate %}
+                                    <div class="progress" style="height: 20px; width: 100px;">
+                                        <div class="progress-bar bg-{{ 'success' if course.completion_rate >= 70 else 'warning' if course.completion_rate >= 50 else 'danger' }}" 
+                                             role="progressbar" style="width: {{ course.completion_rate }}%">
+                                            {{ "%.0f"|format(course.completion_rate) }}%
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">No data</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">No course data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quiz Performance Trends -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Quiz Performance Trends</h5>
+                <a href="/export-analytics?type=quizzes" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download me-1"></i> Export CSV
+                </a>
+            </div>
+            <div class="card-body">
+                {% if quiz_trends %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Quiz</th>
+                                <th>Attempts</th>
+                                <th>Avg. Score</th>
+                                <th>Pass Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quiz in quiz_trends %}
+                            <tr>
+                                <td>{{ quiz.title }}</td>
+                                <td>{{ quiz.attempts }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if quiz.avg_score >= 70 else 'warning' if quiz.avg_score >= 50 else 'danger' }}">
+                                        {{ "%.0f"|format(quiz.avg_score) }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if quiz.pass_rate >= 70 else 'warning' if quiz.pass_rate >= 50 else 'danger' }}">
+                                        {{ "%.0f"|format(quiz.pass_rate) }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">No quiz data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- Top Performers -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Top Performing Students</h5>
+            </div>
+            <div class="card-body">
+                {% if top_students %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Student</th>
+                                <th>Avg. Score</th>
+                                <th>Quizzes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in top_students %}
+                            <tr>
+                                <td>
+                                    {% if loop.index == 1 %}
+                                    <i class="bi bi-trophy-fill text-warning"></i>
+                                    {% elif loop.index == 2 %}
+                                    <i class="bi bi-trophy-fill text-secondary"></i>
+                                    {% elif loop.index == 3 %}
+                                    <i class="bi bi-trophy-fill text bronze"></i>
+                                    {% else %}
+                                    {{ loop.index }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ student.full_name or student.username }}</td>
+                                <td>
+                                    <span class="badge bg-success">{{ "%.0f"|format(student.avg_score) }}%</span>
+                                </td>
+                                <td>{{ student.quiz_count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">No student data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- At-Risk Students -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Students At Risk</h5>
+            </div>
+            <div class="card-body">
+                {% if at_risk_students %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Avg. Score</th>
+                                <th>Risk Level</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in at_risk_students %}
+                            <tr class="{% if student.risk_level == 'Critical' %}table-danger{% elif student.risk_level == 'High' %}table-warning{% endif %}">
+                                <td>{{ student.full_name or student.username }}</td>
+                                <td>{{ "%.0f"|format(student.avg_score) }}%</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if student.risk_level == 'Critical' else 'warning' }}">
+                                        {{ student.risk_level }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="/student/{{ student.id }}" class="btn btn-sm btn-outline-info">View</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-success text-center py-4">
+                    <i class="bi bi-check-circle me-2"></i>No at-risk students identified.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enrollment Over Time -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-calendar me-2"></i>Monthly Enrollment Trends</h5>
+                <a href="/export-analytics?type=enrollments" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download me-1"></i> Export CSV
+                </a>
+            </div>
+            <div class="card-body">
+                {% if enrollment_trends %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>New Enrollments</th>
+                                <th>New Students</th>
+                                <th>Course Completions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for month in enrollment_trends %}
+                            <tr>
+                                <td>{{ month.month }}</td>
+                                <td><span class="badge bg-primary">{{ month.enrollments }}</span></td>
+                                <td><span class="badge bg-info">{{ month.new_students }}</span></td>
+                                <td><span class="badge bg-success">{{ month.completions }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">No enrollment data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

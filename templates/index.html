@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - EduMind AI{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <!-- Page Header -->
+    <div class="page-header mt-4">
+        <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+        <p class="text-muted">Welcome to EduMind AI - Intelligent Education Platform</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="bi bi-people"></i>
+                <h2>{{ total_students }}</h2>
+                <p>Total Students</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                <i class="bi bi-book"></i>
+                <h2>{{ total_courses }}</h2>
+                <p>Active Courses</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                <i class="bi bi-exclamation-triangle"></i>
+                <h2>{{ high_risk_students }}</h2>
+                <p>At-Risk Students</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <i class="bi bi-calendar-check"></i>
+                <h2>{{ avg_attendance }}%</h2>
+                <p>Average Attendance</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row mt-4">
+        <!-- At Risk Students -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Students at Risk</h5>
+                </div>
+                <div class="card-body">
+                    {% if at_risk_students %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Course</th>
+                                    <th>Risk Score</th>
+                                    <th>Level</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in at_risk_students %}
+                                <tr>
+                                    <td><a href="{{ url_for('student_detail', id=student['id']) }}">{{ student['name'] }}</a></td>
+                                    <td>{{ student['course'] }}</td>
+                                    <td>{{ "%.1f"|format(student['risk_score']) }}%</td>
+                                    <td>
+                                        <span class="risk-badge risk-badge-{{ student['risk_level']|lower }}">
+                                            {{ student['risk_level'] }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-success"><i class="bi bi-check-circle"></i> No students at risk!</p>
+                    {% endif %}
+                    <a href="/risk-assessment" class="btn btn-outline-danger btn-sm">View All Risk Assessments</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Assessments -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Recent Assessments</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_assessments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Course</th>
+                                    <th>Type</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assessment in recent_assessments %}
+                                <tr>
+                                    <td>{{ assessment['student_name'] }}</td>
+                                    <td>{{ assessment['course_name'] }}</td>
+                                    <td>{{ assessment['assessment_type'] }}</td>
+                                    <td>
+                                        {% if assessment['score'] %}
+                                        <span class="badge {% if assessment['score'] >= 70 %}bg-success{% elif assessment['score'] >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ "%.1f"|format(assessment['score']) }}/{{ assessment['max_score'] }}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No assessments recorded yet.</p>
+                    {% endif %}
+                    <a href="/assessments" class="btn btn-outline-primary btn-sm">View All Assessments</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Features Quick Access -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-robot"></i> AI Features (Demo Mode)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="ai-feature text-center">
+                                <i class="bi bi-chat-dots" style="font-size: 2rem; color: #7c3aed;"></i>
+                                <h5>AI Chat Assistant</h5>
+                                <p class="text-muted small">Get instant academic guidance and study tips</p>
+                                <a href="/ai-chat" class="btn btn-primary btn-sm">Try Now</a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="ai-feature text-center">
+                                <i class="bi bi-question-circle" style="font-size: 2rem; color: #7c3aed;"></i>
+                                <h5>Quiz Generator</h5>
+                                <p class="text-muted small">Generate personalized quizzes for any course</p>
+                                <a href="/courses" class="btn btn-primary btn-sm">Try Now</a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="ai-feature text-center">
+                                <i class="bi bi-calendar3" style="font-size: 2rem; color: #7c3aed;"></i>
+                                <h5>Study Plan</h5>
+                                <p class="text-muted small">Get AI-generated personalized study plans</p>
+                                <a href="/ai-study-plan" class="btn btn-primary btn-sm">Try Now</a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="ai-feature text-center">
+                                <i class="bi bi-chat-square-text" style="font-size: 2rem; color: #7c3aed;"></i>
+                                <h5>Feedback Analysis</h5>
+                                <p class="text-muted small">AI-powered analysis of your assessment feedback</p>
+                                <a href="/ai-feedback" class="btn btn-primary btn-sm">Try Now</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

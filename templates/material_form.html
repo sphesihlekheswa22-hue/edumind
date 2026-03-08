@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Add Material - EduMind AI{% endblock %}
+{% block page_title %}Add Course Material{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-upload me-2"></i>Upload Course Material</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" required placeholder="Enter material title">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Describe this material"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">File <span class="text-danger">*</span></label>
+                        <input type="file" name="file" class="form-control" required>
+                        <small class="text-muted">Supported: PDF, DOC, DOCX, PPT, PPTX, TXT, MP4, WEBM, PNG, JPG, JPEG, GIF</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-2"></i>Upload Material</button>
+                    <a href="/courses/{{ course_id }}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - EduMind AI{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Stats -->
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <h3><i class="bi bi-people"></i></h3>
+            <h2>{{ total_users }}</h2>
+            <p>Total Users</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <h3><i class="bi bi-book"></i></h3>
+            <h2>{{ total_courses }}</h2>
+            <p>Total Courses</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <h3><i class="bi bi-person-badge"></i></h3>
+            <h2>{{ total_students }}</h2>
+            <p>Students</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card danger">
+            <h3><i class="bi bi-mortarboard"></i></h3>
+            <h2>{{ total_teachers }}</h2>
+            <p>Teachers</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- Analytics Link -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <a href="/analytics" class="btn btn-lg btn-primary">
+                    <i class="bi bi-graph-up me-2"></i> View Analytics & Reporting
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- Recent Users -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-people me-2"></i>Recent Users</h5>
+                <a href="/admin/users" class="btn btn-sm btn-primary">Manage Users</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in recent_users %}
+                            <tr>
+                                <td>
+                                    <strong>{{ user.full_name or user.username }}</strong>
+                                    <br><small class="text-muted">{{ user.email }}</small>
+                                </td>
+                                <td><span class="badge bg-{{ 'primary' if user.role == 'student' else 'success' if user.role == 'teacher' else 'danger' if user.role == 'admin' else 'warning' }}">{{ user.role }}</span></td>
+                                <td>{{ user.created_at[:10] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Courses -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-book me-2"></i>Recent Courses</h5>
+                <a href="/courses" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Teacher</th>
+                                <th>Students</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in recent_courses %}
+                            <tr>
+                                <td>
+                                    <strong>{{ course.title }}</strong>
+                                    {% if course.course_code %}<br><small class="text-muted">{{ course.course_code }}</small>{% endif %}
+                                </td>
+                                <td>{{ course.teacher_name }}</td>
+                                <td><span class="badge bg-info">{{ course.enrolled_count }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

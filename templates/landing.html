@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduMind AI - Intelligent Learning Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8f9fa; }
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .feature-card {
+            border: none;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .btn-primary { background: #667eea; border: none; padding: 12px 30px; border-radius: 8px; }
+        .btn-primary:hover { background: #5568d3; }
+        .navbar { background: transparent !important; }
+        .navbar-brand { font-weight: 700; font-size: 1.5rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand text-white" href="/">
+                <i class="bi bi-mortarboard-fill me-2"></i>EduMind AI
+            </a>
+            <div class="d-flex gap-3">
+                <a href="/login" class="btn btn-outline-light">Login</a>
+                <a href="/register" class="btn btn-light text-primary">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-3 fw-bold text-white mb-4">
+                        AI-Powered Learning Management System
+                    </h1>
+                    <p class="lead text-white-50 mb-5">
+                        Transform education with intelligent tools, personalized learning, and seamless collaboration. 
+                        EduMind AI brings together students, teachers, and parents in one powerful platform.
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="/register" class="btn btn-light btn-lg text-primary px-5">
+                            <i class="bi bi-rocket-takeoff me-2"></i>Start Free
+                        </a>
+                        <a href="/login" class="btn btn-outline-light btn-lg px-5">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-lg p-4" style="background: rgba(255,255,255,0.95); border-radius: 20px;">
+                        <div class="row g-4">
+                            <div class="col-6">
+                                <div class="text-center p-4">
+                                    <i class="bi bi-people display-4 text-primary"></i>
+                                    <h4 class="mt-3">Students</h4>
+                                    <p class="text-muted small">Access courses, take quizzes, track progress</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-4">
+                                    <i class="bi bi-book display-4 text-success"></i>
+                                    <h4 class="mt-3">Teachers</h4>
+                                    <p class="text-muted small">Create courses, manage enrollments, track analytics</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-4">
+                                    <i class="bi bi-shield-check display-4 text-warning"></i>
+                                    <h4 class="mt-3">Admins</h4>
+                                    <p class="text-muted small">Full system control and analytics</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-4">
+                                    <i class="bi bi-heart display-4 text-danger"></i>
+                                    <h4 class="mt-3">Parents</h4>
+                                    <p class="text-muted small">Monitor student progress and achievements</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5">
+        <div class="container py-5">
+            <h2 class="text-center fw-bold mb-5">Powerful Features</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card feature-card p-4">
+                        <i class="bi bi-robot display-4 text-primary mb-3"></i>
+                        <h5>AI Study Assistant</h5>
+                        <p class="text-muted">Get AI-generated summaries, quizzes, and personalized feedback to accelerate learning.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card p-4">
+                        <i class="bi bi-journal-text display-4 text-success mb-3"></i>
+                        <h5>Course Management</h5>
+                        <p class="text-muted">Create, manage, and share course materials with enrolled students easily.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card p-4">
+                        <i class="bi bi-bell display-4 text-warning mb-3"></i>
+                        <h5>Smart Notifications</h5>
+                        <p class="text-muted">Stay informed with real-time notifications for enrollments, grades, and announcements.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card p-4">
+                        <i class="bi bi-chat-dots display-4 text-info mb-3"></i>
+                        <h5>Messaging</h5>
+                        <p class="text-muted">Direct communication between students and teachers for questions and support.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card p-4">
+                        <i class="bi bi-graph-up display-4 text-danger mb-3"></i>
+                        <h5>Analytics</h5>
+                        <p class="text-muted">Track progress, identify weak areas, and measure learning outcomes with AI insights.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card p-4">
+                        <i class="bi bi-people display-4 text-secondary mb-3"></i>
+                        <h5>Role Management</h5>
+                        <p class="text-muted">Separate dashboards for students, teachers, admins, and parents with appropriate permissions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-4" style="background: #2d3748;">
+        <div class="container text-center">
+            <p class="text-white-50 mb-0">
+                &copy; 2024 EduMind AI. All rights reserved. Powered by Artificial Intelligence.
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

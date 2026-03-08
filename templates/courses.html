@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Courses - EduMind AI{% endblock %}
+{% block page_title %}{% if my_courses %}My Courses{% elif all_courses %}All Courses{% elif student_enrolled %}My Course{% else %}Browse Courses{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-book me-2"></i>
+                    {% if my_courses %}My Courses
+                    {% elif all_courses %}All Courses
+                    {% elif student_enrolled %}My Course
+                    {% else %}Available Courses{% endif %}
+                </h5>
+                {% if session.role == 'teacher' %}
+                <a href="/courses/create" class="btn btn-success"><i class="bi bi-plus me-1"></i>Create Course</a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if student_enrolled %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    You are already enrolled in a course. 
+                    {% if courses and courses[0].enrollment_status == 'pending' %}
+                    Your enrollment is pending approval. You can cancel your request to enroll in a different course.
+                    {% else %}
+                    You can view your enrolled course below.
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if courses %}
+                <div class="row g-4">
+                    {% for course in courses %}
+                    <div class="col-md-4">
+                        <div class="card h-100 border">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-primary">{{ course.subject or 'General' }}</span>
+                                    {% if course.enrollment_status == 'approved' %}
+                                    <span class="badge bg-success">Enrolled</span>
+                                    {% elif course.enrollment_status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </div>
+                                <h5>{{ course.title }}</h5>
+                                <p class="text-muted small">{{ (course.description or '')[:100] }}...</p>
+                                <p class="small"><i class="bi bi-person me-1"></i>{{ course.teacher_name or course.teacher_username }}</p>
+                                {% if course.course_code %}
+                                <p class="small"><i class="bi bi-hash me-1"></i>{{ course.course_code }}</p>
+                                {% endif %}
+                                {% if course.enrolled_count is defined %}
+                                <p class="small"><i class="bi bi-people me-1"></i>{{ course.enrolled_count }} students enrolled</p>
+                                {% endif %}
+                                <div class="mt-3">
+                                    <a href="/courses/{{ course.id }}" class="btn btn-sm btn-primary">View Details</a>
+                                    
+                                    {% if session.role == 'student' and course.enrollment_status == 'pending' %}
+                                    <a href="/enrollment/cancel/{{ course.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to cancel your enrollment request?')">Cancel Request</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-book display-1 text-muted"></i>
+                    {% if student_enrolled %}
+                    <p class="text-muted mt-3">No course found.</p>
+                    {% else %}
+                    <p class="text-muted mt-3">No courses available yet.</p>
+                    {% endif %}
+                    {% if session.role == 'teacher' %}
+                    <a href="/courses/create" class="btn btn-primary">Create Your First Course</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

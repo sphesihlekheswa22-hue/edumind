@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quiz.title }} - EduMind AI{% endblock %}
+{% block page_title %}{{ quiz.title }}{% endblock %}
+
+{% block content %}
+{% if previous_result %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    You have already completed this quiz. Your score: {{ previous_result.score }}/{{ previous_result.total_questions }} ({{ (previous_result.score/previous_result.total_questions*100)|int }}%)
+    <a href="/quiz-results/{{ previous_result.id }}" class="alert-link ms-2">View Result</a>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-patch-question me-2"></i>{{ quiz.title }}</h5>
+        <p class="text-muted mb-0">{{ quiz.description }}</p>
+    </div>
+    <div class="card-body">
+        {% if questions %}
+        <form method="POST" action="/quizzes/{{ quiz.id }}/submit">
+            {% for question in questions %}
+            <div class="mb-4">
+                <h6>Question {{ loop.index }}: {{ question.question }}</h6>
+                <div class="ms-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="answer_{{ question.id }}" id="q{{ question.id }}_a" value="A" required>
+                        <label class="form-check-label" for="q{{ question.id }}_a">{{ question.option_a }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="answer_{{ question.id }}" id="q{{ question.id }}_b" value="B">
+                        <label class="form-check-label" for="q{{ question.id }}_b">{{ question.option_b }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="answer_{{ question.id }}" id="q{{ question.id }}_c" value="C">
+                        <label class="form-check-label" for="q{{ question.id }}_c">{{ question.option_c }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="answer_{{ question.id }}" id="q{{ question.id }}_d" value="D">
+                        <label class="form-check-label" for="q{{ question.id }}_d">{{ question.option_d }}</label>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Submit Quiz</button>
+        </form>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="bi bi-exclamation-circle display-4 text-muted"></i>
+            <p class="text-muted mt-3">No questions in this quiz yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

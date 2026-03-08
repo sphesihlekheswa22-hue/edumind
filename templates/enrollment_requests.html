@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Enrollment Requests - EduMind AI{% endblock %}
+{% block page_title %}Enrollment Requests{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Pending Enrollment Requests</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if requests %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course</th>
+                        <th>Requested</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td>
+                            <strong>{{ req.full_name or req.username }}</strong>
+                            <br><small class="text-muted">{{ req.email }}</small>
+                        </td>
+                        <td>{{ req.title }}</td>
+                        <td>{{ req.enrolled_at[:10] }}</td>
+                        <td>
+                            <a href="/enrollment/{{ req.id }}/approve" class="btn btn-sm btn-success">Approve</a>
+                            <a href="/enrollment/{{ req.id }}/reject" class="btn btn-sm btn-danger">Reject</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-person-check display-4 text-muted"></i>
+            <p class="text-muted mt-3">No pending enrollment requests</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

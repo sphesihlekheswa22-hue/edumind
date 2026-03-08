@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - EduMind AI{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if user.profile_picture %}
+                <img src="{{ user.profile_picture }}" alt="Profile" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px; font-size: 4rem;">
+                    {{ user.username[0]|upper }}
+                </div>
+                {% endif %}
+                <h4>{{ user.full_name or user.username }}</h4>
+                <p class="text-muted">{{ user.email }}</p>
+                <span class="badge bg-{{ 'primary' if user.role == 'student' else 'success' if user.role == 'teacher' else 'danger' if user.role == 'admin' else 'warning' }}">{{ user.role|upper }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-pencil me-2"></i>Edit Profile</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" value="{{ user.username }}" disabled>
+                            <small class="text-muted">Username cannot be changed</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="full_name" class="form-control" value="{{ user.full_name or '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ user.email }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Profile Picture</label>
+                        <input type="file" name="profile_picture" class="form-control" accept="image/*">
+                        {% if user.profile_picture %}
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="remove_picture" name="remove_picture" value="remove">
+                            <label class="form-check-label text-danger" for="remove_picture">Remove current picture</label>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Save Changes</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Account Info</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Member Since:</strong> {{ user.created_at }}</p>
+                <p><strong>Account ID:</strong> #{{ user.id }}</p>
+                <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

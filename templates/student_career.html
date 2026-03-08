@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="fas fa-briefcase"></i> Career Development</h2>
+
+    <!-- Career Readiness Score -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body text-center">
+            <h4>Career Readiness Score</h4>
+            <div class="display-1 fw-bold text-primary">{{ readiness_score }}%</div>
+            <p class="text-muted">Complete your profile, CV, projects, and skills to improve your score!</p>
+            <div class="progress" style="height: 20px;">
+                <div class="progress-bar" role="progressbar" style="width: {{ readiness_score }}%">
+                    {{ readiness_score }}%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Career Profile -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Career Profile</h5>
+                </div>
+                <div class="card-body">
+                    {% if profile %}
+                    <p><strong>Interests:</strong> {{ profile.interests }}</p>
+                    <p><strong>Career Goals:</strong> {{ profile.career_goals }}</p>
+                    <p><strong>Target Industries:</strong> {{ profile.target_industries }}</p>
+                    <a href="{{ url_for('student_career_profile') }}" class="btn btn-sm btn-primary">Edit Profile</a>
+                    {% else %}
+                    <p class="text-muted">Set up your career profile to get personalized recommendations.</p>
+                    <a href="{{ url_for('student_career_profile') }}" class="btn btn-primary">Create Profile</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- CVs -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-file-alt"></i> My CVs</h5>
+                        <a href="{{ url_for('student_career_cv') }}" class="btn btn-sm btn-light">
+                            <i class="fas fa-plus"></i> Add CV
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if cvs %}
+                    <ul class="list-group">
+                        {% for cv in cvs %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ cv.title }}</strong>
+                                {% if cv.is_primary %}<span class="badge bg-primary">Primary</span>{% endif %}
+                            </div>
+                            <a href="{{ url_for('student_delete_cv', cv_id=cv.id) }}" class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Delete this CV?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">No CVs uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-project-diagram"></i> My Projects</h5>
+                        <a href="{{ url_for('student_career_projects') }}" class="btn btn-sm btn-light">
+                            <i class="fas fa-plus"></i> Add Project
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if projects %}
+                    <ul class="list-group">
+                        {% for project in projects %}
+                        <li class="list-group-item">
+                            <strong>{{ project.title }}</strong>
+                            {% if project.is_academic %}<span class="badge bg-warning">Academic</span>{% endif %}
+                            <br><small class="text-muted">{{ project.technologies_used }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">No projects in your portfolio yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-warning">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-tools"></i> My Skills</h5>
+                        <a href="{{ url_for('student_career_skills') }}" class="btn btn-sm btn-light">
+                            <i class="fas fa-plus"></i> Add Skills
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if skills %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for skill in skills %}
+                        <span class="badge bg-secondary">{{ skill.skill_name }} ({{ skill.proficiency_level }})</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No skills added yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Recommendations -->
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-briefcase"></i> Job Recommendations</h5>
+                        <a href="{{ url_for('student_career_jobs') }}" class="btn btn-sm btn-light">
+                            View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if jobs %}
+                    <div class="row">
+                        {% for job in jobs[:3] %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>{{ job.job_title }}</h6>
+                                    <p class="mb-1"><small>{{ job.company }}</small></p>
+                                    <span class="badge bg-success">{{ "%.0f"|format(job.relevance_score * 100) }}% Match</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Complete your profile and skills to get job recommendations.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Interview Practice -->
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-comments"></i> Interview Preparation</h5>
+                        <a href="{{ url_for('student_interview_practice') }}" class="btn btn-sm btn-light">
+                            Practice Now
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>Prepare for interviews with AI-generated practice questions based on your field.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

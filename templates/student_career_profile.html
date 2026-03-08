@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user"></i> Career Profile</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Career Interests</label>
+                            <input type="text" name="interests" class="form-control" 
+                                   value="{{ profile.interests or '' }}" 
+                                   placeholder="e.g., Software Development, Data Science">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Career Goals</label>
+                            <textarea name="career_goals" class="form-control" rows="3"
+                                      placeholder="Where do you see yourself in 5 years?">{{ profile.career_goals or '' }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Target Industries</label>
+                            <input type="text" name="target_industries" class="form-control" 
+                                   value="{{ profile.target_industries or '' }}"
+                                   placeholder="e.g., Technology, Finance, Healthcare">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Preferred Job Types</label>
+                            <input type="text" name="preferred_job_types" class="form-control" 
+                                   value="{{ profile.preferred_job_types or '' }}"
+                                   placeholder="e.g., Full-time, Remote, Internship">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Location Preference</label>
+                            <input type="text" name="location_preference" class="form-control" 
+                                   value="{{ profile.location_preference or '' }}"
+                                   placeholder="e.g., Remote, Johannesburg, Cape Town">
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('student_career') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

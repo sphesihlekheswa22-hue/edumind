@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}My Modules - EduMind AI{% endblock %}
+{% block page_title %}My Modules{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-book me-2"></i>My Modules</h5>
+                <a href="/lecturer/module-requests" class="btn btn-sm btn-success"><i class="bi bi-plus me-1"></i>Request New Module</a>
+            </div>
+            <div class="card-body">
+                {% if my_modules %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Module</th>
+                                <th>Course</th>
+                                <th>Chapter</th>
+                                <th>Students</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for module in my_modules %}
+                            <tr>
+                                <td>
+                                    <strong>{{ module.title }}</strong>
+                                    {% if module.chapter_topic %}
+                                    <br><small class="text-muted">{{ module.chapter_topic }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ module.course_title }}</td>
+                                <td>{{ module.chapter_number }}</td>
+                                <td>
+                                    <span class="badge bg-success">{{ module.student_count }} approved</span>
+                                    {% if module.pending_count > 0 %}
+                                    <span class="badge bg-warning">{{ module.pending_count }} pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="/lecturer/modules/{{ module.id }}/students" class="btn btn-sm btn-outline-primary">Students</a>
+                                        <a href="/lecturer/modules/{{ module.id }}/materials" class="btn btn-sm btn-outline-secondary">Materials</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-book display-1 text-muted"></i>
+                    <h4 class="mt-3">No Modules Assigned</h4>
+                    <p class="text-muted">You don't have any modules assigned yet.</p>
+                    <a href="/lecturer/module-requests" class="btn btn-primary">Browse Available Modules</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="fas fa-chalkboard-teacher"></i> My Module Assignments</h2>
+
+    <!-- My Approved Modules -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-check-circle"></i> Modules I Teach</h5>
+        </div>
+        <div class="card-body">
+            {% if my_modules %}
+            <div class="row">
+                {% for mod in my_modules %}
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5>{{ mod.title }}</h5>
+                            <p class="text-muted">{{ mod.course_title }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-info">{{ mod.student_count }} Students</span>
+                                <div>
+                                    <a href="{{ url_for('lecturer_module_students', module_id=mod.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-users"></i> Students
+                                    </a>
+                                    <a href="{{ url_for('lecturer_module_materials', module_id=mod.id) }}" class="btn btn-sm btn-secondary">
+                                        <i class="fas fa-book"></i> Materials
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">You haven't been assigned to any modules yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- My Pending Requests -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning">
+            <h5 class="mb-0"><i class="fas fa-clock"></i> My Pending Requests</h5>
+        </div>
+        <div class="card-body">
+            {% if my_requests %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Module</th>
+                        <th>Course</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in my_requests %}
+                    <tr>
+                        <td>{{ req.module_title }}</td>
+                        <td>{{ req.course_title }}</td>
+                        <td>
+                            {% if req.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                            {% elif req.status == 'approved' %}
+                            <span class="badge bg-success">Approved</span>
+                            {% else %}
+                            <span class="badge bg-danger">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ req.created_at.strftime('%Y-%m-%d') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No pending requests.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Available Modules -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-search"></i> Request to Teach a Module</h5>
+        </div>
+        <div class="card-body">
+            {% if available_modules %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Module</th>
+                            <th>Course</th>
+                            <th>Chapter</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mod in available_modules %}
+                        <tr>
+                            <td>
+                                <strong>{{ mod.title }}</strong><br>
+                                <small class="text-muted">{{ (mod.description or '')[:100] }}...</small>
+                            </td>
+                            <td>{{ mod.course_title }}</td>
+                            <td>{{ mod.chapter_number or '-' }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#requestModal{{ mod.id }}">
+                                    <i class="fas fa-paper-plane"></i> Request
+                                </button>
+                                
+                                <!-- Request Modal -->
+                                <div class="modal fade" id="requestModal{{ mod.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Request to Teach: {{ mod.title }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form method="POST" action="{{ url_for('lecturer_request_module', module_id=mod.id) }}">
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Why do you want to teach this module?</label>
+                                                        <textarea name="message" class="form-control" rows="3" placeholder="Optional message to admin..."></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No modules available for request. Admin needs to create modules first.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
