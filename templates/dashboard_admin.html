@@ -31,7 +31,7 @@
         <div class="stat-card danger">
             <h3><i class="bi bi-mortarboard"></i></h3>
             <h2>{{ total_teachers }}</h2>
-            <p>Teachers</p>
+            <p>Lecturers</p>
         </div>
     </div>
 </div>
@@ -74,7 +74,7 @@
                                     <strong>{{ user.full_name or user.username }}</strong>
                                     <br><small class="text-muted">{{ user.email }}</small>
                                 </td>
-                                <td><span class="badge bg-{{ 'primary' if user.role == 'student' else 'success' if user.role == 'teacher' else 'danger' if user.role == 'admin' else 'warning' }}">{{ user.role }}</span></td>
+                                <td><span class="badge bg-{{ 'primary' if user.role == 'student' else 'success' if user.role == 'lecturer' else 'danger' if user.role == 'admin' else 'warning' }}">{{ user.role }}</span></td>
                                 <td>{{ user.created_at[:10] }}</td>
                             </tr>
                             {% endfor %}

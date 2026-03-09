@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: edumind
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_PATH
+        value: "/app/edumind.db"
+      - key: UPLOAD_FOLDER
+        value: "/app/static/uploads"
+    disk:
+      mountPath: /app/static/uploads
+      sizeGB: 1

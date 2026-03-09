@@ -14,15 +14,35 @@ from datetime import datetime, timedelta
 import re
 import requests
 import json
+import logging
+import sys
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
 app = Flask(__name__)
-app.secret_key = 'edumind_ai_lms_secret_key_2024_production'
 
-# Configuration
-DB_NAME = 'edumind.db'
-UPLOAD_FOLDER = 'static/uploads'
+# Production configuration using environment variables
+app.secret_key = os.environ.get('SECRET_KEY', 'edumind_ai_lms_secret_key_2024_production')
+
+# Database configuration - use absolute path for PythonAnywhere
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.environ.get('DATABASE_PATH', os.path.join(BASE_DIR, 'edumind.db'))
+
+# Upload folder configuration
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(BASE_DIR, 'static/uploads'))
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max
+
+# Debug mode - False for production
+DEBUG_MODE = os.environ.get('DEBUG', 'False').lower() == 'true'
+app.debug = DEBUG_MODE
 
 # Built-in AI Response Generator (No external API needed)
 # Uses intelligent rule-based responses for educational content
@@ -220,7 +240,7 @@ def init_db():
     
     # Add columns to existing users table if they don't exist
     try:
-        cursor.execute('ALTER TABLE users ADD COLUMN role TEXT CHECK(role IN (\'student\', \'teacher\', \'admin\', \'parent\'))')
+        cursor.execute('ALTER TABLE users ADD COLUMN role TEXT CHECK(role IN (\'student\', \'lecturer\', \'admin\', \'parent\'))')
     except:
         pass
     try:
@@ -803,6 +823,26 @@ def init_db():
         ''')
     except: pass
     
+    # Study schedules - automatic weekly timetable for students
+    try:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS study_schedules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id INTEGER NOT NULL,
+                day_of_week TEXT NOT NULL CHECK(day_of_week IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')),
+                time_slot TEXT NOT NULL,
+                activity_type TEXT NOT NULL CHECK(activity_type IN ('study', 'assignment', 'review', 'practice', 'revision', 'exam_prep')),
+                module_id INTEGER,
+                title TEXT NOT NULL,
+                description TEXT,
+                is_completed INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (student_id) REFERENCES users(id),
+                FOREIGN KEY (module_id) REFERENCES modules(id)
+            )
+        ''')
+    except: pass
+    
     # Career profiles
     try:
         cursor.execute('''
@@ -969,10 +1009,26 @@ def init_db():
                 description TEXT,
                 due_date DATE,
                 max_score INTEGER DEFAULT 100,
+                instruction_file TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (module_id) REFERENCES modules(id)
             )
         ''')
+    except: pass
+    
+    # Migration: Add instruction_file column to assignments table if it doesn't exist
+    try:
+        cursor.execute('ALTER TABLE assignments ADD COLUMN instruction_file TEXT')
+    except: pass
+    
+    # Migration: Add image column to modules table if it doesn't exist
+    try:
+        cursor.execute('ALTER TABLE modules ADD COLUMN image TEXT')
+    except: pass
+    
+    # Migration: Add question_type column to quiz_questions if it doesn't exist
+    try:
+        cursor.execute('ALTER TABLE quiz_questions ADD COLUMN question_type TEXT')
     except: pass
     
     try:
@@ -982,11 +1038,14 @@ def init_db():
                 assignment_id INTEGER NOT NULL,
                 student_id INTEGER NOT NULL,
                 submission_text TEXT,
+                file_path TEXT,
                 grade INTEGER,
                 feedback TEXT,
+                graded_at TIMESTAMP,
                 submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (assignment_id) REFERENCES assignments(id),
-                FOREIGN KEY (student_id) REFERENCES users(id)
+                FOREIGN KEY (student_id) REFERENCES users(id),
+                UNIQUE(assignment_id, student_id)
             )
         ''')
     except: pass
@@ -1131,6 +1190,9 @@ def dashboard():
     
     if role == 'student':
         # Student dashboard - show enrolled course and modules
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[STUDENT DASHBOARD] User ID: {user_id}, Role: {role}")
         
         # Get student's course info
         student_info = conn.execute('''
@@ -1150,6 +1212,7 @@ def dashboard():
             WHERE me.student_id = ? AND me.status = 'approved' AND m.is_active = 1
             ORDER BY c.title, m.chapter_number
         ''', (user_id,)).fetchall()
+        logger.info(f"[STUDENT DASHBOARD] Found {len(my_modules)} enrolled modules for student {user_id}")
         
         unread_messages = conn.execute(
             'SELECT COUNT(*) FROM messages WHERE recipient_id = ? AND is_read = 0', (user_id,)
@@ -1244,7 +1307,58 @@ def dashboard():
                 'progress': int(progress)
             })
         
+        # Calculate study schedule progress (real-time)
+        schedule_stats = conn.execute('''
+            SELECT 
+                COUNT(*) as total_tasks,
+                SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END) as completed_tasks
+            FROM study_schedules
+            WHERE student_id = ?
+        ''', (user_id,)).fetchone()
+        
+        if schedule_stats and schedule_stats['total_tasks'] > 0:
+            schedule_completed = schedule_stats['completed_tasks']
+            schedule_total = schedule_stats['total_tasks']
+            schedule_progress = int((schedule_completed / schedule_total) * 100)
+        else:
+            schedule_completed = 0
+            schedule_total = 0
+            schedule_progress = 0
+        
+        # Calculate overall progress based on multiple factors
+        # 1. Module progress from quizzes (40% weight)
+        # 2. Schedule completion (30% weight) 
+        # 3. Assignments completed (30% weight)
+        
+        # Get module progress average
+        if module_progress:
+            avg_module_progress = sum(m['progress'] for m in module_progress) / len(module_progress)
+        else:
+            avg_module_progress = 0
+        
+        # Get assignments completed
+        completed_assignments = conn.execute('''
+            SELECT COUNT(*) as count FROM assignments a
+            JOIN module_enrollments me ON a.module_id = me.module_id
+            WHERE me.student_id = ? AND me.status = 'approved'
+        ''', (user_id,)).fetchone()[0]
+        
+        total_assignments = conn.execute('''
+            SELECT COUNT(*) as count FROM assignments a
+            JOIN module_enrollments me ON a.module_id = me.module_id
+            WHERE me.student_id = ? AND me.status = 'approved'
+        ''', (user_id,)).fetchone()[0]
+        
+        assignment_progress = int((completed_assignments / total_assignments * 100)) if total_assignments > 0 else 0
+        
+        # Calculate overall progress (weighted average)
+        if module_progress or schedule_total > 0:
+            overall_progress = int((avg_module_progress * 0.4) + (schedule_progress * 0.3) + (assignment_progress * 0.3))
+        else:
+            overall_progress = 0
+        
         conn.close()
+        logger.info(f"[STUDENT DASHBOARD] Rendering with: student_info={student_info['full_name'] if student_info else 'None'}, modules={len(my_modules)}, progress={overall_progress}%")
         return render_template('dashboard_student.html', 
                              student_info=student_info,
                              my_modules=my_modules,
@@ -1257,39 +1371,31 @@ def dashboard():
                              avg_score=avg_score,
                              upcoming_assignments=upcoming_assignments,
                              notifications=notifications,
-                             job_recommendations=job_recommendations)
-    
-    elif role in ['teacher', 'lecturer']:
-        # Teacher/Lecturer dashboard - show courses they created
-        my_courses = conn.execute('''
-            SELECT c.*, 
-                   (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id AND status = 'approved') as enrolled_count,
-                   (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id AND status = 'pending') as pending_count
-            FROM courses c
-            WHERE c.teacher_id = ?
-        ''', (user_id,)).fetchall()
-        
-        pending_requests = conn.execute('''
-            SELECT e.id, u.full_name, u.email, c.title, e.enrolled_at
-            FROM enrollments e
-            JOIN users u ON e.student_id = u.id
-            JOIN courses c ON e.course_id = c.id
-            WHERE c.teacher_id = ? AND e.status = 'pending'
-        ''', (user_id,)).fetchall()
-        
-        total_students = conn.execute('''
-            SELECT COUNT(DISTINCT student_id) FROM enrollments 
-            WHERE course_id IN (SELECT id FROM courses WHERE teacher_id = ?) AND status = 'approved'
-        ''', (user_id,)).fetchone()[0]
-        
-        conn.close()
-        return render_template('dashboard_teacher.html',
-                             my_courses=my_courses,
-                             pending_requests=pending_requests,
-                             total_students=total_students)
+                             job_recommendations=job_recommendations,
+                             schedule_progress=schedule_progress,
+                             schedule_completed=schedule_completed,
+                             schedule_total=schedule_total,
+                             overall_progress=overall_progress,
+                             assignment_progress=assignment_progress,
+                             avg_module_progress=avg_module_progress)
     
     elif role == 'lecturer':
         # Lecturer dashboard - show modules they teach
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[LECTURER DASHBOARD] User ID: {user_id}, Role: {role}")
+        
+        # Debug: Check if module_lecturers table has data
+        try:
+            ml_count = conn.execute('SELECT COUNT(*) FROM module_lecturers').fetchone()[0]
+            logger.info(f"[LECTURER DASHBOARD] Total module_lecturers records: {ml_count}")
+            
+            # Check if this lecturer has any module assignments
+            my_ml_count = conn.execute('SELECT COUNT(*) FROM module_lecturers WHERE lecturer_id = ?', (user_id,)).fetchone()[0]
+            logger.info(f"[LECTURER DASHBOARD] Lecturer {user_id} has {my_ml_count} module assignments")
+        except Exception as e:
+            logger.error(f"[LECTURER DASHBOARD] Error checking module_lecturers: {e}")
+        
         try:
             my_modules = conn.execute('''
                 SELECT m.id, m.title, m.description, m.chapter_number, m.code, m.course_id, m.is_active,
@@ -1302,7 +1408,9 @@ def dashboard():
                 WHERE ml.lecturer_id = ? AND m.is_active = 1
                 ORDER BY c.title, m.chapter_number
             ''', (user_id,)).fetchall()
+            logger.info(f"[LECTURER DASHBOARD] Found {len(my_modules)} modules for lecturer {user_id}")
         except Exception as e:
+            logger.error(f"[LECTURER DASHBOARD] Error loading modules: {str(e)}")
             flash(f'Error loading modules: {str(e)}', 'danger')
             my_modules = []
         
@@ -1333,9 +1441,123 @@ def dashboard():
         except Exception as e:
             total_students = 0
         
+        # Get total courses
+        try:
+            total_courses = conn.execute('''
+                SELECT COUNT(DISTINCT course_id) FROM modules m
+                JOIN module_lecturers ml ON m.id = ml.module_id
+                WHERE ml.lecturer_id = ?
+            ''', (user_id,)).fetchone()[0]
+        except:
+            total_courses = 0
+        
+        # Get assignments pending grading
+        try:
+            pending_grading = conn.execute('''
+                SELECT COUNT(*) FROM assignment_submissions 
+                WHERE grade IS NULL
+                AND assignment_id IN (
+                    SELECT a.id FROM assignments a
+                    JOIN module_lecturers ml ON a.module_id = ml.module_id
+                    WHERE ml.lecturer_id = ?
+                )
+            ''', (user_id,)).fetchone()[0]
+        except:
+            pending_grading = 0
+        
+        # Get unread messages count
+        try:
+            unread_messages = conn.execute('''
+                SELECT COUNT(*) FROM messages 
+                WHERE recipient_id = ? AND is_read = 0
+            ''', (user_id,)).fetchone()[0]
+        except:
+            unread_messages = 0
+        
+        # Get student performance data for charts
+        try:
+            # Get students who have taken quizzes in lecturer's modules
+            quiz_students = conn.execute('''
+                SELECT DISTINCT qr.student_id, u.full_name, u.email
+                FROM quiz_results qr
+                JOIN quizzes q ON qr.quiz_id = q.id
+                JOIN modules m ON q.module_id = m.id
+                JOIN module_lecturers ml ON m.id = ml.module_id
+                JOIN users u ON qr.student_id = u.id
+                WHERE ml.lecturer_id = ?
+            ''', (user_id,)).fetchall()
+            
+            passing_students = 0
+            at_risk_students = 0
+            avg_students = 0
+            
+            for student in quiz_students:
+                # Get average score for this student in lecturer's modules
+                avg_result = conn.execute('''
+                    SELECT AVG(CAST(qr.score AS FLOAT) / CAST(qr.total_questions AS FLOAT) * 100) as avg_score
+                    FROM quiz_results qr
+                    JOIN quizzes q ON qr.quiz_id = q.id
+                    JOIN modules m ON q.module_id = m.id
+                    JOIN module_lecturers ml ON m.id = ml.module_id
+                    WHERE qr.student_id = ? AND ml.lecturer_id = ?
+                ''', (student['student_id'], user_id)).fetchone()
+                
+                if avg_result and avg_result['avg_score'] is not None:
+                    avg_score = avg_result['avg_score']
+                    if avg_score >= 70:
+                        passing_students += 1
+                    elif avg_score < 50:
+                        at_risk_students += 1
+                    else:
+                        avg_students += 1
+            
+            total_quiz_students = passing_students + avg_students + at_risk_students
+        except Exception as e:
+            passing_students = 0
+            at_risk_students = 0
+            avg_students = 0
+            total_quiz_students = 0
+        
         conn.close()
+        logger.info(f"[LECTURER DASHBOARD] Rendering with: my_modules={len(my_modules)}, pending_requests={len(pending_requests)}, total_students={total_students}, total_courses={total_courses}")
         return render_template('dashboard_lecturer.html',
                              my_modules=my_modules,
+                             pending_requests=pending_requests,
+                             total_students=total_students,
+                             total_courses=total_courses,
+                             pending_grading=pending_grading,
+                             unread_messages=unread_messages,
+                             passing_students=passing_students,
+                             at_risk_students=at_risk_students,
+                             avg_students=avg_students,
+                             total_quiz_students=total_quiz_students)
+    
+    elif role == 'teacher':
+        # Teacher dashboard - show courses they created
+        my_courses = conn.execute('''
+            SELECT c.*, 
+                   (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id AND status = 'approved') as enrolled_count,
+                   (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id AND status = 'pending') as pending_count
+            FROM courses c
+            WHERE c.teacher_id = ?
+        ''', (user_id,)).fetchall()
+        
+        pending_requests = conn.execute('''
+            SELECT e.id, u.full_name, u.email, c.title, e.enrolled_at
+            FROM enrollments e
+            JOIN users u ON e.student_id = u.id
+            JOIN courses c ON e.course_id = c.id
+            WHERE c.teacher_id = ? AND e.status = 'pending'
+        ''', (user_id,)).fetchall()
+        
+        total_students = conn.execute('''
+            SELECT COUNT(DISTINCT student_id) FROM enrollments 
+            WHERE course_id IN (SELECT id FROM courses WHERE teacher_id = ?) AND status = 'approved'
+        ''', (user_id,)).fetchone()[0]
+        
+        conn.close()
+        return render_template('dashboard_teacher.html',
+                             my_courses=my_courses,
                              pending_requests=pending_requests,
                              total_students=total_students)
     
@@ -3278,7 +3500,7 @@ def admin_delete_user(user_id):
 @role_required('admin')
 def admin_edit_role(user_id):
     new_role = request.form.get('role')
-    if new_role not in ['student', 'teacher', 'lecturer', 'admin', 'parent']:
+    if new_role not in ['student', 'lecturer', 'admin', 'parent']:
         flash('Invalid role!', 'danger')
         return redirect(url_for('admin_users'))
     
@@ -3410,6 +3632,67 @@ def lecturer_modules():
     
     conn.close()
     return render_template('lecturer_module_list.html', my_modules=my_modules)
+
+# Lecturer assignments list
+@app.route('/lecturer/assignments')
+@login_required
+@role_required('lecturer')
+def lecturer_assignments():
+    conn = get_db_connection()
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        flash('Please login first.', 'danger')
+        conn.close()
+        return redirect(url_for('login'))
+    
+    try:
+        # Get all assignments from modules assigned to this lecturer
+        assignments = conn.execute('''
+            SELECT a.*, m.title as module_title, c.title as course_title
+            FROM assignments a
+            JOIN modules m ON a.module_id = m.id
+            JOIN courses c ON m.course_id = c.id
+            JOIN module_lecturers ml ON m.id = ml.module_id
+            WHERE ml.lecturer_id = ?
+            ORDER BY a.due_date DESC, a.created_at DESC
+        ''', (user_id,)).fetchall()
+    except Exception as e:
+        flash(f'Error loading assignments: {str(e)}', 'danger')
+        assignments = []
+    
+    conn.close()
+    return render_template('lecturer_assignments.html', assignments=assignments)
+
+# Lecturer quizzes list
+@app.route('/lecturer/quizzes')
+@login_required
+@role_required('lecturer')
+def lecturer_quizzes():
+    conn = get_db_connection()
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        flash('Please login first.', 'danger')
+        conn.close()
+        return redirect(url_for('login'))
+    
+    try:
+        # Get all quizzes created by this lecturer
+        quizzes = conn.execute('''
+            SELECT q.*, m.title as module_title, c.title as course_title
+            FROM quizzes q
+            LEFT JOIN modules m ON q.module_id = m.id
+            LEFT JOIN courses c ON q.course_id = c.id
+            WHERE q.created_by = ?
+            ORDER BY q.created_at DESC
+        ''', (user_id,)).fetchall()
+    except Exception as e:
+        flash(f'Error loading quizzes: {str(e)}', 'danger')
+        quizzes = []
+    
+    conn.close()
+    return render_template('lecturer_quizzes.html', quizzes=quizzes)
 
 # Lecturer module requests
 @app.route('/lecturer/module-requests')
@@ -3663,6 +3946,204 @@ def student_modules():
     
     conn.close()
     return render_template('student_modules.html', modules=modules, courses=enrolled_courses)
+
+# Student Smart Schedule - Automatic weekly study timetable
+@app.route('/student/schedule')
+@login_required
+@role_required('student')
+def student_schedule():
+    conn = get_db_connection()
+    user_id = session['user_id']
+    
+    # Get existing schedule
+    schedule = conn.execute('''
+        SELECT ss.*, m.title as module_title, c.title as course_title
+        FROM study_schedules ss
+        LEFT JOIN modules m ON ss.module_id = m.id
+        LEFT JOIN courses c ON m.course_id = c.id
+        WHERE ss.student_id = ?
+        ORDER BY 
+            CASE ss.day_of_week
+                WHEN 'Monday' THEN 1
+                WHEN 'Tuesday' THEN 2
+                WHEN 'Wednesday' THEN 3
+                WHEN 'Thursday' THEN 4
+                WHEN 'Friday' THEN 5
+                WHEN 'Saturday' THEN 6
+                WHEN 'Sunday' THEN 7
+            END,
+            ss.time_slot
+    ''', (user_id,)).fetchall()
+    
+    # Get enrolled modules for generating schedule
+    enrolled_modules = conn.execute('''
+        SELECT m.*, c.title as course_title
+        FROM module_enrollments me
+        JOIN modules m ON me.module_id = m.id
+        JOIN courses c ON m.course_id = c.id
+        WHERE me.student_id = ? AND me.status = 'approved'
+    ''', (user_id,)).fetchall()
+    
+    conn.close()
+    
+    # Generate schedule if not exists
+    if not schedule and enrolled_modules:
+        return generate_and_show_schedule(enrolled_modules)
+    
+    return render_template('student_schedule.html', schedule=schedule, modules=enrolled_modules)
+
+def generate_and_show_schedule(enrolled_modules):
+    """Generate automatic weekly study schedule for student"""
+    conn = get_db_connection()
+    user_id = session['user_id']
+    
+    # Clear existing schedule
+    conn.execute('DELETE FROM study_schedules WHERE student_id = ?', (user_id,))
+    
+    # Days of the week
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    
+    # Time slots - morning, afternoon, evening
+    time_slots = {
+        'Morning': '09:00 AM',
+        'Afternoon': '02:00 PM',
+        'Evening': '07:00 PM'
+    }
+    
+    # Activity types for variety
+    activities = ['study', 'review', 'practice', 'assignment']
+    
+    # Generate schedule for each module
+    module_list = list(enrolled_modules)
+    num_modules = len(module_list)
+    
+    schedule_entries = []
+    slot_index = 0
+    
+    for i, module in enumerate(module_list):
+        # Distribute modules across the week
+        day_idx = i % 5  # Focus on weekdays primarily
+        day = days[day_idx]
+        
+        # Alternate time slots
+        time_keys = list(time_slots.keys())
+        time_key = time_keys[slot_index % len(time_keys)]
+        time_display = time_slots[time_key]
+        
+        activity = activities[i % len(activities)]
+        
+        # Create study entry for this module
+        schedule_entries.append({
+            'day_of_week': day,
+            'time_slot': time_display,
+            'activity_type': activity,
+            'module_id': module['id'],
+            'title': f"{activity.title()} {module['title']}",
+            'description': f"{activity.title()} - {module['course_title']}"
+        })
+        
+        slot_index += 1
+    
+    # Add weekend revision sessions
+    if module_list:
+        # Saturday morning - catch up/revision
+        schedule_entries.append({
+            'day_of_week': 'Saturday',
+            'time_slot': '10:00 AM',
+            'activity_type': 'revision',
+            'module_id': module_list[0]['id'] if module_list else None,
+            'title': 'Weekend Revision',
+            'description': 'Review the week\'s material'
+        })
+        
+        # Sunday - catch up
+        schedule_entries.append({
+            'day_of_week': 'Sunday',
+            'time_slot': '11:00 AM',
+            'activity_type': 'revision',
+            'module_id': module_list[-1]['id'] if module_list else None,
+            'title': 'Weekend Catch-up',
+            'description': 'Complete any pending tasks'
+        })
+    
+    # Insert all schedule entries
+    for entry in schedule_entries:
+        conn.execute('''
+            INSERT INTO study_schedules (student_id, day_of_week, time_slot, activity_type, module_id, title, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, entry['day_of_week'], entry['time_slot'], entry['activity_type'], 
+              entry['module_id'], entry['title'], entry['description']))
+    
+    conn.commit()
+    
+    # Fetch the newly created schedule
+    schedule = conn.execute('''
+        SELECT ss.*, m.title as module_title, c.title as course_title
+        FROM study_schedules ss
+        LEFT JOIN modules m ON ss.module_id = m.id
+        LEFT JOIN courses c ON m.course_id = c.id
+        WHERE ss.student_id = ?
+        ORDER BY 
+            CASE ss.day_of_week
+                WHEN 'Monday' THEN 1
+                WHEN 'Tuesday' THEN 2
+                WHEN 'Wednesday' THEN 3
+                WHEN 'Thursday' THEN 4
+                WHEN 'Friday' THEN 5
+                WHEN 'Saturday' THEN 6
+                WHEN 'Sunday' THEN 7
+            END,
+            ss.time_slot
+    ''', (user_id,)).fetchall()
+    
+    conn.close()
+    
+    return render_template('student_schedule.html', schedule=schedule, modules=enrolled_modules)
+
+@app.route('/student/schedule/regenerate')
+@login_required
+@role_required('student')
+def regenerate_schedule():
+    """Regenerate the study schedule"""
+    conn = get_db_connection()
+    user_id = session['user_id']
+    
+    # Get enrolled modules
+    enrolled_modules = conn.execute('''
+        SELECT m.*, c.title as course_title
+        FROM module_enrollments me
+        JOIN modules m ON me.module_id = m.id
+        JOIN courses c ON m.course_id = c.id
+        WHERE me.student_id = ? AND me.status = 'approved'
+    ''', (user_id,)).fetchall()
+    
+    conn.close()
+    
+    if not enrolled_modules:
+        flash('You need to enroll in modules first to generate a schedule!', 'warning')
+        return redirect(url_for('student_modules'))
+    
+    return generate_and_show_schedule(enrolled_modules)
+
+@app.route('/student/schedule/complete/<int:schedule_id>')
+@login_required
+@role_required('student')
+def complete_schedule_item(schedule_id):
+    """Mark a schedule item as completed"""
+    conn = get_db_connection()
+    user_id = session['user_id']
+    
+    # Verify ownership
+    item = conn.execute('SELECT * FROM study_schedules WHERE id = ? AND student_id = ?', 
+                        (schedule_id, user_id)).fetchone()
+    
+    if item:
+        conn.execute('UPDATE study_schedules SET is_completed = 1 WHERE id = ?', (schedule_id,))
+        conn.commit()
+        flash('Task marked as completed!', 'success')
+    
+    conn.close()
+    return redirect(url_for('student_schedule'))
 
 @app.route('/student/modules/<int:module_id>/request')
 @login_required
@@ -3947,7 +4428,7 @@ def module_detail(module_id):
     
     # Get module info with course
     module = conn.execute('''
-        SELECT m.*, c.title as course_title, c.id as course_id, u.full_name as teacher_name
+        SELECT m.*, c.title as course_title, c.id as course_id, c.teacher_id, u.full_name as teacher_name
         FROM modules m
         JOIN courses c ON m.course_id = c.id
         JOIN users u ON c.teacher_id = u.id
@@ -3996,6 +4477,14 @@ def module_detail(module_id):
             WHERE module_id = ? ORDER BY order_index, created_at
         ''', (module_id,)).fetchall()
     
+    # Get module assignments
+    assignments = []
+    if can_access:
+        assignments = conn.execute('''
+            SELECT * FROM assignments 
+            WHERE module_id = ? ORDER BY due_date, created_at
+        ''', (module_id,)).fetchall()
+    
     # Get module quizzes
     quizzes = []
     if can_access:
@@ -4022,6 +4511,7 @@ def module_detail(module_id):
                          module_enrollment=module_enrollment,
                          materials=materials,
                          quizzes=quizzes,
+                         assignments=assignments,
                          module_students=module_students,
                          can_access=can_access)
 
@@ -4056,6 +4546,379 @@ def student_module_materials(module_id):
     
     conn.close()
     return render_template('student_module_materials.html', module=module, materials=materials)
+
+# ==================== ASSIGNMENT ROUTES ====================
+
+# Lecturer: Create assignment for a module
+@app.route('/lecturer/modules/<int:module_id>/assignments/create', methods=['GET', 'POST'])
+@login_required
+@role_required('lecturer')
+def create_assignment(module_id):
+    conn = get_db_connection()
+    
+    # Check if lecturer has access to this module
+    module = conn.execute('''
+        SELECT m.*, c.id as course_id, c.teacher_id
+        FROM modules m
+        JOIN courses c ON m.course_id = c.id
+        WHERE m.id = ?
+    ''', (module_id,)).fetchone()
+    
+    if not module:
+        flash('Module not found.', 'danger')
+        conn.close()
+        return redirect(url_for('lecturer_modules'))
+    
+    # Check permission - only the course owner or assigned lecturer can create
+    lecturer_assigned = conn.execute('''
+        SELECT id FROM module_lecturers
+        WHERE module_id = ? AND lecturer_id = ?
+    ''', (module_id, session['user_id'])).fetchone()
+    
+    if module['teacher_id'] != session['user_id'] and not lecturer_assigned:
+        flash('You do not have permission to create assignments for this module.', 'danger')
+        conn.close()
+        return redirect(url_for('lecturer_modules'))
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        due_date = request.form.get('due_date')
+        max_score = request.form.get('max_score', 100)
+        
+        # Handle file upload
+        instruction_file = None
+        if 'instruction_file' in request.files:
+            file = request.files['instruction_file']
+            if file and file.filename:
+                # Create upload folder if not exists
+                upload_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', 'assignments')
+                os.makedirs(upload_folder, exist_ok=True)
+                
+                # Save file
+                filename = f"assignment_{module_id}_{int(datetime.now().timestamp())}_{file.filename}"
+                filepath = os.path.join(upload_folder, filename)
+                file.save(filepath)
+                instruction_file = f"uploads/assignments/{filename}"
+        
+        conn.execute('''
+            INSERT INTO assignments (module_id, title, description, due_date, max_score, instruction_file)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (module_id, title, description, due_date, max_score, instruction_file))
+        conn.commit()
+        
+        flash('Assignment created successfully!', 'success')
+        conn.close()
+        return redirect(url_for('module_detail', module_id=module_id))
+    
+    conn.close()
+    return render_template('assignment_form.html', module=module)
+
+# Lecturer: Create quiz for a module
+@app.route('/lecturer/modules/<int:module_id>/quizzes/create', methods=['GET', 'POST'])
+@login_required
+@role_required('lecturer')
+def create_quiz(module_id):
+    conn = get_db_connection()
+    
+    # Check if lecturer has access to this module
+    module = conn.execute('''
+        SELECT m.*, c.id as course_id, c.teacher_id
+        FROM modules m
+        JOIN courses c ON m.course_id = c.id
+        WHERE m.id = ?
+    ''', (module_id,)).fetchone()
+    
+    if not module:
+        flash('Module not found.', 'danger')
+        conn.close()
+        return redirect(url_for('lecturer_modules'))
+    
+    # Check permission - only the course owner or assigned lecturer can create
+    lecturer_assigned = conn.execute('''
+        SELECT id FROM module_lecturers
+        WHERE module_id = ? AND lecturer_id = ?
+    ''', (module_id, session['user_id'])).fetchone()
+    
+    if module['teacher_id'] != session['user_id'] and not lecturer_assigned:
+        flash('You do not have permission to create quizzes for this module.', 'danger')
+        conn.close()
+        return redirect(url_for('lecturer_modules'))
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        
+        conn.execute('''
+            INSERT INTO quizzes (course_id, module_id, title, description, created_by)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (module['course_id'], module_id, title, description, session['user_id']))
+        conn.commit()
+        
+        flash('Quiz created successfully!', 'success')
+        conn.close()
+        return redirect(url_for('lecturer_quizzes'))
+    
+    conn.close()
+    return render_template('quiz_form.html', module=module)
+
+# Lecturer: Manage quiz questions
+@app.route('/lecturer/quizzes/<int:quiz_id>/questions', methods=['GET', 'POST'])
+@login_required
+@role_required('lecturer')
+def manage_quiz_questions(quiz_id):
+    conn = get_db_connection()
+    
+    # Get quiz
+    quiz = conn.execute('SELECT * FROM quizzes WHERE id = ?', (quiz_id,)).fetchone()
+    
+    if not quiz:
+        flash('Quiz not found.', 'danger')
+        conn.close()
+        return redirect(url_for('lecturer_quizzes'))
+    
+    # Check permission - only the creator can manage questions
+    if quiz['created_by'] != session['user_id'] and session['role'] != 'admin':
+        flash('You do not have permission to manage this quiz.', 'danger')
+        conn.close()
+        return redirect(url_for('lecturer_quizzes'))
+    
+    # Get existing questions
+    questions = conn.execute('SELECT * FROM quiz_questions WHERE quiz_id = ?', (quiz_id,)).fetchall()
+    
+    if request.method == 'POST':
+        question_text = request.form.get('question')
+        question_type = request.form.get('question_type')
+        option_a = request.form.get('option_a', '')
+        option_b = request.form.get('option_b', '')
+        option_c = request.form.get('option_c', '')
+        option_d = request.form.get('option_d', '')
+        
+        # Handle True/False vs Multiple Choice
+        if question_type == 'true_false':
+            correct_answer = request.form.get('correct_answer_tf', 'True')
+            option_a = 'True'
+            option_b = 'False'
+            option_c = ''
+            option_d = ''
+        else:
+            correct_answer = request.form.get('correct_answer')
+        
+        conn.execute('''
+            INSERT INTO quiz_questions (quiz_id, question, question_type, option_a, option_b, option_c, option_d, correct_answer)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (quiz_id, question_text, question_type, option_a, option_b, option_c, option_d, correct_answer))
+        conn.commit()
+        
+        flash('Question added successfully!', 'success')
+        return redirect(url_for('manage_quiz_questions', quiz_id=quiz_id))
+    
+    conn.close()
+    return render_template('quiz_questions.html', quiz=quiz, questions=questions)
+
+# View assignment (both students and lecturers)
+@app.route('/assignments/<int:assignment_id>')
+@login_required
+def view_assignment(assignment_id):
+    conn = get_db_connection()
+    role = session.get('role')
+    user_id = session['user_id']
+    
+    # Get assignment with module info
+    assignment = conn.execute('''
+        SELECT a.*, m.title as module_title, m.id as module_id, 
+               c.title as course_title, c.id as course_id, c.teacher_id
+        FROM assignments a
+        JOIN modules m ON a.module_id = m.id
+        JOIN courses c ON m.course_id = c.id
+        WHERE a.id = ?
+    ''', (assignment_id,)).fetchone()
+    
+    if not assignment:
+        flash('Assignment not found.', 'danger')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # Check permissions
+    can_access = False
+    if role == 'admin':
+        can_access = True
+    elif role == 'lecturer':
+        # Check if lecturer owns the course or is assigned to the module
+        if assignment['teacher_id'] == user_id:
+            can_access = True
+        else:
+            lecturer_assigned = conn.execute('''
+                SELECT id FROM module_lecturers 
+                WHERE module_id = ? AND lecturer_id = ?
+            ''', (assignment['module_id'], user_id)).fetchone()
+            if lecturer_assigned:
+                can_access = True
+    elif role == 'student':
+        # Check if student is enrolled in the module
+        enrollment = conn.execute('''
+            SELECT id FROM module_enrollments 
+            WHERE student_id = ? AND module_id = ? AND status = 'approved'
+        ''', (user_id, assignment['module_id'])).fetchone()
+        if enrollment:
+            can_access = True
+    
+    if not can_access:
+        flash('You do not have permission to view this assignment.', 'danger')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # Get student's submission if exists
+    submission = None
+    if role == 'student':
+        submission = conn.execute('''
+            SELECT * FROM assignment_submissions 
+            WHERE assignment_id = ? AND student_id = ?
+        ''', (assignment_id, user_id)).fetchone()
+    
+    # Get all submissions for lecturer
+    submissions = None
+    if role == 'lecturer' or role == 'admin':
+        submissions = conn.execute('''
+            SELECT s.*, u.full_name, u.email
+            FROM assignment_submissions s
+            JOIN users u ON s.student_id = u.id
+            WHERE s.assignment_id = ?
+            ORDER BY s.submitted_at DESC
+        ''', (assignment_id,)).fetchall()
+    
+    conn.close()
+    return render_template('assignment_detail.html', assignment=assignment, submission=submission, submissions=submissions)
+
+# Student: Submit assignment
+@app.route('/assignments/<int:assignment_id>/submit', methods=['POST'])
+@login_required
+@role_required('student')
+def submit_assignment(assignment_id):
+    conn = get_db_connection()
+    user_id = session['user_id']
+    
+    # Get assignment
+    assignment = conn.execute('SELECT * FROM assignments WHERE id = ?', (assignment_id,)).fetchone()
+    
+    if not assignment:
+        flash('Assignment not found.', 'danger')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # Check if student is enrolled
+    enrollment = conn.execute('''
+        SELECT id FROM module_enrollments 
+        WHERE student_id = ? AND module_id = ? AND status = 'approved'
+    ''', (user_id, assignment['module_id'])).fetchone()
+    
+    if not enrollment:
+        flash('You are not enrolled in this module.', 'danger')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # Check if already submitted
+    existing = conn.execute('''
+        SELECT id FROM assignment_submissions 
+        WHERE assignment_id = ? AND student_id = ?
+    ''', (assignment_id, user_id)).fetchone()
+    
+    submission_text = request.form.get('submission_text')
+    
+    # Handle file upload
+    file_path = None
+    if 'submission_file' in request.files:
+        file = request.files['submission_file']
+        if file and file.filename:
+            # Create upload folder if not exists
+            upload_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', 'submissions')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            # Save file
+            filename = f"submission_{assignment_id}_{user_id}_{int(datetime.now().timestamp())}_{file.filename}"
+            filepath = os.path.join(upload_folder, filename)
+            file.save(filepath)
+            file_path = f"uploads/submissions/{filename}"
+    
+    if existing:
+        # Update existing submission
+        conn.execute('''
+            UPDATE assignment_submissions 
+            SET submission_text = ?, file_path = ?, submitted_at = CURRENT_TIMESTAMP
+            WHERE assignment_id = ? AND student_id = ?
+        ''', (submission_text, file_path, assignment_id, user_id))
+    else:
+        # Create new submission
+        conn.execute('''
+            INSERT INTO assignment_submissions (assignment_id, student_id, submission_text, file_path)
+            VALUES (?, ?, ?, ?)
+        ''', (assignment_id, user_id, submission_text, file_path))
+    
+    conn.commit()
+    flash('Assignment submitted successfully!', 'success')
+    conn.close()
+    return redirect(url_for('view_assignment', assignment_id=assignment_id))
+
+# Lecturer: Grade submission
+@app.route('/assignments/submissions/<int:submission_id>/grade', methods=['POST'])
+@login_required
+@role_required('lecturer')
+def grade_submission(submission_id):
+    conn = get_db_connection()
+    
+    # Get submission with assignment info
+    submission = conn.execute('''
+        SELECT s.*, a.max_score, a.module_id
+        FROM assignment_submissions s
+        JOIN assignments a ON s.assignment_id = a.id
+        WHERE s.id = ?
+    ''', (submission_id,)).fetchone()
+    
+    if not submission:
+        flash('Submission not found.', 'danger')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # Check permission
+    module = conn.execute('''
+        SELECT m.*, c.teacher_id
+        FROM modules m
+        JOIN courses c ON m.course_id = c.id
+        WHERE m.id = ?
+    ''', (submission['module_id'],)).fetchone()
+    
+    lecturer_assigned = conn.execute('''
+        SELECT id FROM module_lecturers 
+        WHERE module_id = ? AND lecturer_id = ?
+    ''', (submission['module_id'], session['user_id'])).fetchone()
+    
+    if module['teacher_id'] != session['user_id'] and not lecturer_assigned:
+        flash('You do not have permission to grade this submission.', 'danger')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    grade = request.form.get('grade')
+    feedback = request.form.get('feedback')
+    
+    conn.execute('''
+        UPDATE assignment_submissions 
+        SET grade = ?, feedback = ?, graded_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    ''', (grade, feedback, submission_id))
+    conn.commit()
+    
+    # Notify student
+    conn.execute('''
+        INSERT INTO notifications (user_id, title, message_text, link)
+        VALUES (?, ?, ?, ?)
+    ''', (submission['student_id'], 'Assignment Graded', 
+          f'Your submission for assignment has been graded.', 
+          f'/assignments/{submission['assignment_id']}'))
+    conn.commit()
+    
+    flash('Grade saved successfully!', 'success')
+    conn.close()
+    return redirect(url_for('view_assignment', assignment_id=submission['assignment_id']))
 
 # ==================== CAREER DEVELOPMENT ROUTES ====================
 

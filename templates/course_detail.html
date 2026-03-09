@@ -112,19 +112,19 @@
                 <h5 class="mb-0">Actions</h5>
             </div>
             <div class="card-body">
-                {% if can_access %}
+                {% if can_access and session.role == 'student' %}
                 <a href="/ai-chat?course={{ course.id }}" class="btn btn-success w-100 mb-2"><i class="bi bi-robot me-2"></i>AI Study Assistant</a>
                 {% endif %}
                 
-                {% if session.role in ['teacher', 'admin'] or course.teacher_id == session.user_id %}
+                {% if session.role in ['lecturer', 'admin'] or course.teacher_id == session.user_id %}
                 <a href="/courses/{{ course.id }}/edit" class="btn btn-primary w-100 mb-2"><i class="bi bi-pencil me-2"></i>Edit Course</a>
                 <a href="/courses/{{ course.id }}/delete" class="btn btn-danger w-100" onclick="return confirm('Are you sure?')"><i class="bi bi-trash me-2"></i>Delete Course</a>
                 {% endif %}
             </div>
         </div>
         
-        <!-- Enrolled Students (for teachers) -->
-        {% if enrolled_students and (session.role in ['teacher', 'admin']) %}
+        <!-- Enrolled Students (for lecturers) -->
+        {% if enrolled_students and (session.role in ['lecturer', 'admin']) %}
         <div class="card">
             <div class="card-header bg-white">
                 <h5 class="mb-0"><i class="bi bi-people me-2"></i>Enrolled Students ({{ enrolled_students|length }})</h5>

@@ -3,6 +3,26 @@
 {% block title %}My Modules - EduMind AI{% endblock %}
 {% block page_title %}My Modules{% endblock %}
 
+{% block style %}
+<style>
+.module-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    overflow: hidden;
+}
+.module-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+.module-card .card-img-top {
+    transition: opacity 0.2s;
+}
+.module-card:hover .card-img-top {
+    opacity: 0.9;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-md-12">
@@ -13,44 +33,49 @@
             </div>
             <div class="card-body">
                 {% if my_modules %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Module</th>
-                                <th>Course</th>
-                                <th>Chapter</th>
-                                <th>Students</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for module in my_modules %}
-                            <tr>
-                                <td>
-                                    <strong>{{ module.title }}</strong>
+                <div class="row">
+                    {% for module in my_modules %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <a href="/lecturer/modules/{{ module.id }}/materials" class="text-decoration-none">
+                            <div class="card h-100 shadow-sm module-card">
+                                {% if module.image %}
+                                <img src="{{ module.image }}" class="card-img-top" alt="{{ module.title }}" style="height: 160px; object-fit: cover;">
+                                {% else %}
+                                <img src="https://wallpapercave.com/wp/wp2036002.jpg" class="card-img-top" alt="{{ module.title }}" style="height: 160px; object-fit: cover; object-position: center;">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ module.title }}</h5>
+                                    <p class="text-muted mb-2">{{ module.course_title }}</p>
                                     {% if module.chapter_topic %}
-                                    <br><small class="text-muted">{{ module.chapter_topic }}</small>
+                                    <small class="text-muted">{{ module.chapter_topic }}</small>
                                     {% endif %}
-                                </td>
-                                <td>{{ module.course_title }}</td>
-                                <td>{{ module.chapter_number }}</td>
-                                <td>
-                                    <span class="badge bg-success">{{ module.student_count }} approved</span>
-                                    {% if module.pending_count > 0 %}
-                                    <span class="badge bg-warning">{{ module.pending_count }} pending</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="/lecturer/modules/{{ module.id }}/students" class="btn btn-sm btn-outline-primary">Students</a>
-                                        <a href="/lecturer/modules/{{ module.id }}/materials" class="btn btn-sm btn-outline-secondary">Materials</a>
+                                    <div class="mt-2">
+                                        <span class="badge bg-success">{{ module.student_count }} students</span>
+                                        {% if module.pending_count > 0 %}
+                                        <span class="badge bg-warning">{{ module.pending_count }} pending</span>
+                                        {% endif %}
                                     </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                </div>
+                                <div class="card-footer bg-white">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="/lecturer/modules/{{ module.id }}/students" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-users"></i> Students
+                                        </a>
+                                        <a href="/lecturer/modules/{{ module.id }}/materials" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-book"></i> Materials
+                                        </a>
+                                        <a href="/lecturer/modules/{{ module.id }}/assignments/create" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-plus-circle"></i> Assignment
+                                        </a>
+                                        <a href="/lecturer/modules/{{ module.id }}/quizzes/create" class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-plus-circle"></i> Quiz
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
                 </div>
                 {% else %}
                 <div class="text-center py-5">

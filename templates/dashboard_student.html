@@ -13,6 +13,48 @@
     </p>
 </div>
 
+<!-- Overall Study Progress -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-1"><i class="bi bi-graph-up-arrow me-2"></i>Your Study Progress</h4>
+                        <p class="mb-0 opacity-75">Real-time progress based on your study plan, quizzes, and assignments</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <h1 class="display-4 fw-bold mb-0">{{ overall_progress }}%</h1>
+                    </div>
+                </div>
+                <div class="progress mt-3 bg-white bg-opacity-25" style="height: 12px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ overall_progress }}%;"></div>
+                </div>
+                <div class="row mt-3 text-center">
+                    <div class="col-4">
+                        <div class="bg-white bg-opacity-10 rounded p-2">
+                            <h5 class="mb-0">{{ avg_module_progress|int }}%</h5>
+                            <small class="opacity-75">Quiz Progress</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-white bg-opacity-10 rounded p-2">
+                            <h5 class="mb-0">{{ schedule_progress }}%</h5>
+                            <small class="opacity-75">Schedule ({{ schedule_completed }}/{{ schedule_total }})</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-white bg-opacity-10 rounded p-2">
+                            <h5 class="mb-0">{{ assignment_progress }}%</h5>
+                            <small class="opacity-75">Assignments</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4">
     <!-- Left Column - Modules and Assignments -->
     <div class="col-lg-8">

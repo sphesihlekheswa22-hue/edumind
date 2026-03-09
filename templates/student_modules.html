@@ -1,5 +1,26 @@
 {% extends "base.html" %}
 
+{% block title %}My Modules - EduMind AI{% endblock %}
+
+{% block style %}
+<style>
+.module-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+.module-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+.module-card .card-img-top {
+    transition: opacity 0.2s;
+}
+.module-card:hover .card-img-top {
+    opacity: 0.9;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <h2 class="mb-4"><i class="fas fa-book-open"></i> My Modules</h2>
@@ -14,42 +35,49 @@
     <div class="row">
         {% for mod in modules %}
         <div class="col-md-6 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">{{ mod.title }}</h5>
-                    <small class="text-muted">{{ mod.course_title }}</small>
-                </div>
-                <div class="card-body">
-                    <p>{{ mod.description or 'No description available.' }}</p>
-                    
-                    {% if mod.enrollment_status == 'approved' %}
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="badge bg-success">Enrolled</span>
-                        <span class="badge bg-info">{{ mod.student_count }} Students</span>
+            <a href="{{ url_for('student_module_materials', module_id=mod.id) if mod.enrollment_status == 'approved' else url_for('student_request_module', module_id=mod.id) }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm module-card">
+                    {% if mod.image %}
+                    <img src="{{ mod.image }}" class="card-img-top" alt="{{ mod.title }}" style="height: 180px; object-fit: cover;">
+                    {% else %}
+                    <img src="https://wallpapercave.com/wp/wp2036002.jpg" class="card-img-top" alt="{{ mod.title }}" style="height: 180px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ mod.title }}</h5>
+                        <small class="text-muted">{{ mod.course_title }}</small>
                     </div>
-                    {% elif mod.enrollment_status == 'pending' %}
-                    <span class="badge bg-warning">Request Pending</span>
-                    {% else %}
-                    <span class="badge bg-secondary">Not Enrolled</span>
-                    {% endif %}
+                    <div class="card-body">
+                        <p>{{ mod.description or 'No description available.' }}</p>
+                        
+                        {% if mod.enrollment_status == 'approved' %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-success">Enrolled</span>
+                            <span class="badge bg-info">{{ mod.student_count }} Students</span>
+                        </div>
+                        {% elif mod.enrollment_status == 'pending' %}
+                        <span class="badge bg-warning">Request Pending</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Not Enrolled</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        {% if mod.enrollment_status == 'approved' %}
+                        <span class="btn btn-primary btn-sm">
+                            <i class="fas fa-book"></i> View Materials
+                        </span>
+                        {% elif mod.enrollment_status == 'pending' %}
+                        <button class="btn btn-secondary btn-sm" disabled>
+                            <i class="fas fa-clock"></i> Request Pending
+                        </button>
+                        {% else %}
+                        <a href="{{ url_for('student_request_module', module_id=mod.id) }}" class="btn btn-success btn-sm"
+                           onclick="return confirm('Request to join this module?')">
+                            <i class="fas fa-plus"></i> Request to Join
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="card-footer">
-                    {% if mod.enrollment_status == 'approved' %}
-                    <a href="{{ url_for('student_module_materials', module_id=mod.id) }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-book"></i> View Materials
-                    </a>
-                    {% elif mod.enrollment_status == 'pending' %}
-                    <button class="btn btn-secondary btn-sm" disabled>
-                        <i class="fas fa-clock"></i> Request Pending
-                    </button>
-                    {% else %}
-                    <a href="{{ url_for('student_request_module', module_id=mod.id) }}" class="btn btn-success btn-sm"
-                       onclick="return confirm('Request to join this module?')">
-                        <i class="fas fa-plus"></i> Request to Join
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
+            </a>
         </div>
         {% endfor %}
     </div>

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}My Study Schedule - EduMind AI{% endblock %}
+{% block page_title %}My Study Schedule{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Schedule Header -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Weekly Study Timetable</h5>
+                    <p class="text-muted small mb-0">Your personalized study schedule based on enrolled modules</p>
+                </div>
+                <div>
+                    <a href="/student/schedule/regenerate" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Regenerate Schedule
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if schedule %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Day</th>
+                                <th>Time</th>
+                                <th>Activity</th>
+                                <th>Module</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in schedule %}
+                            <tr class="{% if item.is_completed %}table-success{% endif %}">
+                                <td>
+                                    <strong>{{ item.day_of_week }}</strong>
+                                </td>
+                                <td>{{ item.time_slot }}</td>
+                                <td>
+                                    {% if item.activity_type == 'study' %}
+                                    <span class="badge bg-primary">Study</span>
+                                    {% elif item.activity_type == 'review' %}
+                                    <span class="badge bg-info">Review</span>
+                                    {% elif item.activity_type == 'practice' %}
+                                    <span class="badge bg-success">Practice</span>
+                                    {% elif item.activity_type == 'assignment' %}
+                                    <span class="badge bg-warning text-dark">Assignment</span>
+                                    {% elif item.activity_type == 'revision' %}
+                                    <span class="badge bg-secondary">Revision</span>
+                                    {% elif item.activity_type == 'exam_prep' %}
+                                    <span class="badge bg-danger">Exam Prep</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.module_title %}
+                                    <a href="/modules/{{ item.module_id }}">{{ item.module_title }}</a>
+                                    {% else %}
+                                    <span class="text-muted">General</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.description or '-' }}</td>
+                                <td>
+                                    {% if item.is_completed %}
+                                    <span class="text-success"><i class="bi bi-check-circle-fill"></i> Completed</span>
+                                    {% else %}
+                                    <span class="text-muted">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not item.is_completed %}
+                                    <a href="/student/schedule/complete/{{ item.id }}" class="btn btn-sm btn-success" title="Mark as completed">
+                                        <i class="bi bi-check-lg"></i>
+                                    </a>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-secondary" disabled>
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-calendar-week display-1 text-muted"></i>
+                    <h4 class="mt-3">No Schedule Yet</h4>
+                    <p class="text-muted">Enroll in modules to automatically generate your study schedule.</p>
+                    <a href="/student/modules" class="btn btn-primary">
+                        <i class="bi bi-journal-text me-2"></i>View My Modules
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Overview Cards -->
+{% if schedule %}
+<div class="row g-4 mt-2">
+    {% set days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+    {% for day in days %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">{{ day }}</h6>
+            </div>
+            <div class="card-body p-0">
+                {% set day_items = schedule|selectattr('day_of_week', 'equalto', day)|list %}
+                {% if day_items %}
+                <ul class="list-group list-group-flush">
+                    {% for item in day_items %}
+                    <li class="list-group-item {% if item.is_completed %}bg-success bg-opacity-10{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <small class="text-muted">{{ item.time_slot }}</small>
+                                <p class="mb-0 fw-medium">{{ item.title }}</p>
+                            </div>
+                            {% if item.is_completed %}
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="p-3 text-center text-muted">
+                    <small>No activities scheduled</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Progress Summary -->
+{% if schedule %}
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% set completed = schedule|selectattr('is_completed', 'equalto', 1)|list|length %}
+                {% set total = schedule|list|length %}
+                {% set progress = (completed / total * 100)|round|int %}
+                <h5>Weekly Progress</h5>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress }}%">
+                        {{ progress }}% Complete
+                    </div>
+                </div>
+                <p class="text-muted mt-2 mb-0">{{ completed }} of {{ total }} tasks completed this week</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

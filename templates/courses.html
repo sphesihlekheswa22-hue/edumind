@@ -15,7 +15,7 @@
                     {% elif student_enrolled %}My Course
                     {% else %}Available Courses{% endif %}
                 </h5>
-                {% if session.role == 'teacher' %}
+                {% if session.role == 'lecturer' %}
                 <a href="/courses/create" class="btn btn-success"><i class="bi bi-plus me-1"></i>Create Course</a>
                 {% endif %}
             </div>
@@ -75,7 +75,7 @@
                     {% else %}
                     <p class="text-muted mt-3">No courses available yet.</p>
                     {% endif %}
-                    {% if session.role == 'teacher' %}
+                    {% if session.role == 'lecturer' %}
                     <a href="/courses/create" class="btn btn-primary">Create Your First Course</a>
                     {% endif %}
                 </div>

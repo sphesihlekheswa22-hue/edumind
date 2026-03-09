@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Questions - {{ quiz.title }} - EduMind AI{% endblock %}
+{% block page_title %}Manage Questions{% endblock %}
+
+{% block style %}
+<style>
+.question-card {
+    border-left: 4px solid #ffc107;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i>{{ quiz.title }}</h5>
+                    <small>Add and manage quiz questions</small>
+                </div>
+                <a href="/lecturer/quizzes" class="btn btn-sm btn-light">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Quizzes
+                </a>
+            </div>
+        </div>
+        
+        <!-- Add Question Form -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Question</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label">Question Text</label>
+                                <textarea name="question" class="form-control" rows="2" required placeholder="Enter your question..."></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Question Type</label>
+                                <select name="question_type" class="form-select" id="questionType" onchange="toggleOptions()">
+                                    <option value="multiple_choice">Multiple Choice</option>
+                                    <option value="true_false">True/False</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Multiple Choice Options -->
+                    <div id="multipleChoiceOptions">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Option A</label>
+                                    <input type="text" name="option_a" class="form-control" placeholder="First option">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Option B</label>
+                                    <input type="text" name="option_b" class="form-control" placeholder="Second option">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Option C</label>
+                                    <input type="text" name="option_c" class="form-control" placeholder="Third option">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Option D</label>
+                                    <input type="text" name="option_d" class="form-control" placeholder="Fourth option">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- True/False Options -->
+                    <div id="trueFalseOptions" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Correct Answer</label>
+                            <select name="correct_answer_tf" class="form-select">
+                                <option value="True">True</option>
+                                <option value="False">False</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Correct Answer</label>
+                                <select name="correct_answer" class="form-select" id="correctAnswer" required>
+                                    <option value="">Select correct answer...</option>
+                                    <option value="A">Option A</option>
+                                    <option value="B">Option B</option>
+                                    <option value="C">Option C</option>
+                                    <option value="D">Option D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-plus-circle me-1"></i> Add Question
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Existing Questions -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Existing Questions ({{ questions|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if questions %}
+                <div class="list-group">
+                    {% for question in questions %}
+                    <div class="list-group-item question-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    <span class="badge bg-info me-2">{{ question.question_type or 'Multiple Choice' }}</span>
+                                    {{ question.question }}
+                                </h6>
+                                {% if question.question_type == 'multiple_choice' %}
+                                <div class="mt-2">
+                                    <small class="me-3"><strong>A:</strong> {{ question.option_a }}</small>
+                                    <small class="me-3"><strong>B:</strong> {{ question.option_b }}</small>
+                                    <small class="me-3"><strong>C:</strong> {{ question.option_c }}</small>
+                                    <small class="me-3"><strong>D:</strong> {{ question.option_d }}</small>
+                                </div>
+                                {% endif %}
+                                <div class="mt-2">
+                                    <span class="badge bg-success">Correct: {{ question.correct_answer }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No questions added yet. Add your first question above.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleOptions() {
+    const type = document.getElementById('questionType').value;
+    const mcOptions = document.getElementById('multipleChoiceOptions');
+    const tfOptions = document.getElementById('trueFalseOptions');
+    const correctAnswer = document.getElementById('correctAnswer');
+    
+    if (type === 'true_false') {
+        mcOptions.style.display = 'none';
+        tfOptions.style.display = 'block';
+        correctAnswer.required = false;
+        correctAnswer.style.display = 'none';
+    } else {
+        mcOptions.style.display = 'block';
+        tfOptions.style.display = 'none';
+        correctAnswer.required = true;
+        correctAnswer.style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

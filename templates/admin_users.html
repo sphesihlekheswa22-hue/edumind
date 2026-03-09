@@ -35,7 +35,7 @@
                             <form method="POST" action="/admin/users/{{ user.id }}/edit-role" class="d-inline">
                                 <select name="role" class="form-select form-select-sm d-inline" style="width: auto;" onchange="this.form.submit()">
                                     <option value="student" {% if user.role == 'student' %}selected{% endif %}>Student</option>
-                                    <option value="teacher" {% if user.role == 'teacher' %}selected{% endif %}>Teacher</option>
+                                    <option value="lecturer" {% if user.role == 'lecturer' %}selected{% endif %}>Lecturer</option>
                                     <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
                                     <option value="parent" {% if user.role == 'parent' %}selected{% endif %}>Parent</option>
                                 </select>

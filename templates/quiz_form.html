@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Create Quiz - EduMind AI{% endblock %}
+{% block page_title %}Create Quiz{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create New Quiz</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    <strong>Module:</strong> {{ module.title }}
+                </p>
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Quiz Title</label>
+                        <input type="text" name="title" class="form-control" required placeholder="Enter quiz title">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Enter quiz description (optional)"></textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-1"></i> Create Quiz
+                        </button>
+                        <a href="/lecturer/modules/{{ module.id }}/materials" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

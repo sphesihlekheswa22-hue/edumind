@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}{{ assignment.title }} - EduMind AI{% endblock %}
+{% block page_title %}{{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <!-- Assignment Details -->
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>{{ assignment.title }}</h5>
+                    <p class="text-muted mb-0 small">
+                        <a href="/modules/{{ assignment.module_id }}">{{ assignment.module_title }}</a> | 
+                        <a href="/courses/{{ assignment.course_id }}">{{ assignment.course_title }}</a>
+                    </p>
+                </div>
+                <div>
+                    {% if session.role == 'lecturer' %}
+                    <a href="/modules/{{ assignment.module_id }}" class="btn btn-sm btn-outline-secondary">Back to Module</a>
+                    {% else %}
+                    <a href="/modules/{{ assignment.module_id }}" class="btn btn-sm btn-outline-secondary">Back to Module</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% if assignment.description %}
+                <h6>Instructions:</h6>
+                <p>{{ assignment.description }}</p>
+                {% else %}
+                <p class="text-muted">No additional instructions provided.</p>
+                {% endif %}
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Due Date:</strong> 
+                            {% if assignment.due_date %}
+                            <span class="badge bg-warning">{{ assignment.due_date }}</span>
+                            {% else %}
+                            <span class="text-muted">No due date</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Maximum Marks:</strong> {{ assignment.max_score }}</p>
+                    </div>
+                </div>
+                
+                {% if assignment.instruction_file %}
+                <div class="mt-3">
+                    <a href="/{{ assignment.instruction_file }}" class="btn btn-outline-primary" download>
+                        <i class="bi bi-download me-1"></i> Download Instructions File
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Student Submission Section -->
+        {% if session.role == 'student' %}
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-upload me-2"></i>Your Submission</h5>
+            </div>
+            <div class="card-body">
+                {% if submission %}
+                <div class="alert {% if submission.grade %}alert-success{% else %}alert-info{% endif %}">
+                    <h6><i class="bi {% if submission.grade %}bi-check-circle-fill{% else %}bi-clock-fill{% endif %} me-2"></i>
+                        {% if submission.grade %}Graded{% elif submission.file_path or submission.submission_text %}Submitted{% else %}Not Submitted{% endif %}
+                    </h6>
+                    {% if submission.submitted_at %}
+                    <small>Submitted on: {{ submission.submitted_at }}</small>
+                    {% endif %}
+                </div>
+                
+                {% if submission.submission_text %}
+                <div class="mb-3">
+                    <h6>Your Answer/Comment:</h6>
+                    <p class="border rounded p-3 bg-light">{{ submission.submission_text }}</p>
+                </div>
+                {% endif %}
+                
+                {% if submission.file_path %}
+                <div class="mb-3">
+                    <h6>Your Submitted File:</h6>
+                    <a href="/{{ submission.file_path }}" class="btn btn-outline-primary" download>
+                        <i class="bi bi-file-earmark-arrow-down me-1"></i> Download Your Submission
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% if submission.grade %}
+                <div class="alert alert-success mt-3">
+                    <h5 class="mb-2">Your Grade: {{ submission.grade }}/{{ assignment.max_score }}</h5>
+                    {% if submission.feedback %}
+                    <p class="mb-0"><strong>Feedback:</strong> {{ submission.feedback }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if not submission.grade %}
+                <hr>
+                <h6>Update Submission</h6>
+                {% endif %}
+                {% else %}
+                <div class="alert alert-secondary">
+                    <i class="bi bi-info-circle me-2"></i> You haven't submitted this assignment yet.
+                </div>
+                {% endif %}
+                
+                {% if not submission.grade %}
+                <form method="POST" enctype="multipart/form-data" action="/assignments/{{ assignment.id }}/submit">
+                    <div class="mb-3">
+                        <label for="submission_text" class="form-label">Your Answer / Comments</label>
+                        <textarea class="form-control" id="submission_text" name="submission_text" rows="4" placeholder="Enter your answer or comments..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="submission_file" class="form-label">Upload File</label>
+                        <input type="file" class="form-control" id="submission_file" name="submission_file">
+                        <small class="text-muted">Upload your assignment file (PDF, DOC, etc.)</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-upload me-1"></i> Submit Assignment
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sidebar - Lecturer Submissions List -->
+    {% if session.role == 'lecturer' or session.role == 'admin' %}
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-people me-2"></i>Submissions ({{ submissions|length }})</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if submissions %}
+                <div class="list-group list-group-flush">
+                    {% for sub in submissions %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ sub.full_name }}</h6>
+                                <small class="text-muted">{{ sub.submitted_at if sub.submitted_at else 'No submission' }}</small>
+                            </div>
+                            <div>
+                                {% if sub.grade %}
+                                <span class="badge bg-success">{{ sub.grade }}/{{ assignment.max_score }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Pending</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if sub.file_path %}
+                        <a href="/{{ sub.file_path }}" class="btn btn-sm btn-outline-primary mt-2" download>
+                            <i class="bi bi-download me-1"></i> Download File
+                        </a>
+                        {% endif %}
+                        
+                        {% if sub.submission_text %}
+                        <button class="btn btn-sm btn-outline-secondary mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#submission{{ sub.id }}">
+                            View Answer
+                        </button>
+                        <div class="collapse mt-2" id="submission{{ sub.id }}">
+                            <div class="border rounded p-2 bg-light">{{ sub.submission_text }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <hr>
+                        <form method="POST" action="/assignments/submissions/{{ sub.id }}/grade" class="mt-2">
+                            <div class="row g-2">
+                                <div class="col-5">
+                                    <input type="number" class="form-control form-control-sm" name="grade" placeholder="Grade" value="{{ sub.grade or '' }}" min="0" max="{{ assignment.max_score }}">
+                                </div>
+                                <div class="col-7">
+                                    <input type="text" class="form-control form-control-sm" name="feedback" placeholder="Feedback" value="{{ sub.feedback or '' }}">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary mt-2 w-100">
+                                <i class="bi bi-check-lg me-1"></i> Save Grade
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox display-4 text-muted"></i>
+                    <p class="mt-2 text-muted">No submissions yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

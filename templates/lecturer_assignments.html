@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}My Assignments - EduMind AI{% endblock %}
+{% block page_title %}My Assignments{% endblock %}
+
+{% block style %}
+<style>
+.assignment-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.assignment-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>My Assignments</h5>
+                <a href="/lecturer/modules" class="btn btn-sm btn-primary"><i class="bi bi-arrow-left me-1"></i>Back to Modules</a>
+            </div>
+            <div class="card-body">
+                {% if assignments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Module</th>
+                                <th>Course</th>
+                                <th>Due Date</th>
+                                <th>Max Score</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr>
+                                <td>
+                                    <strong>{{ assignment.title }}</strong>
+                                    {% if assignment.description %}
+                                    <br><small class="text-muted">{{ assignment.description[:50] }}...</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ assignment.module_title }}</td>
+                                <td>{{ assignment.course_title }}</td>
+                                <td>
+                                    {% if assignment.due_date %}
+                                    {{ assignment.due_date }}
+                                    {% else %}
+                                    <span class="text-muted">No due date</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ assignment.max_score }}</td>
+                                <td>
+                                    <a href="/assignments/{{ assignment.id }}" class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+                    <h4 class="mt-3">No Assignments Yet</h4>
+                    <p class="text-muted">You haven't created any assignments for your modules.</p>
+                    <a href="/lecturer/modules" class="btn btn-primary">Go to My Modules</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
