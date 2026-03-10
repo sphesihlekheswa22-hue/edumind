@@ -91,7 +91,7 @@ OLLAMA_MODEL = 'phi'  # Smaller, faster model that works well on weaker GPUs
 
 # Google Gemini API Configuration
 GEMINI_API_KEY = 'AIzaSyCKr-mpGshEn8Z6vDCIl9hiTdrh3GwkvNY'  # User provided key
-GEMINI_MODEL = 'gemini-1.5-flash'
+GEMINI_MODEL = 'gemini-1.5-flash-8b'
 
 def generate_gemini_response(prompt, system_prompt=None, max_tokens=500):
     """
