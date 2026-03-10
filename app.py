@@ -360,7 +360,7 @@ def seed_sample_data():
         for course_id in course_ids:
             for j in range(3):
                 cursor.execute('''
-                    INSERT OR IGNORE INTO modules (course_id, name, description, year, semester)
+                    INSERT OR IGNORE INTO modules (course_id, title, description, year, semester)
                     VALUES (?, ?, ?, ?, ?)
                 ''', (course_id, f'Module {j+1}', f'Learning module {j+1}', 2024, (j % 2) + 1))
         
