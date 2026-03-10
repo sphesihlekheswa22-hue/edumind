@@ -93,6 +93,33 @@ OLLAMA_MODEL = 'phi'  # Smaller, faster model that works well on weaker GPUs
 GEMINI_API_KEY = 'AIzaSyCKr-mpGshEn8Z6vDCIl9hiTdrh3GwkvNY'  # User provided key
 GEMINI_MODEL = 'gemini-1.5-flash-8b'
 
+# Hugging Face API (free, no key needed for basic use)
+HF_API_URL = 'https://api-inference.huggingface.co/models/google/flan-t5-base'
+
+def generate_huggingface_response(prompt, max_tokens=200):
+    """
+    Generate response using Hugging Face Inference API (free)
+    """
+    try:
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": max_tokens,
+                "temperature": 0.7,
+            }
+        }
+        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if isinstance(result, list) and len(result) > 0:
+                return result[0].get('generated_text', '').strip()
+        return None
+    except Exception as e:
+        print(f"[HF] Error: {str(e)[:50]}")
+        return None
+
 def generate_gemini_response(prompt, system_prompt=None, max_tokens=500):
     """
     Generate response using Google Gemini API
@@ -140,14 +167,20 @@ def generate_gemini_response(prompt, system_prompt=None, max_tokens=500):
 
 def generate_ollama_response(prompt, system_prompt=None, max_tokens=500):
     """
-    Generate response using Ollama API or Google Gemini API
-    Tries Gemini first, then falls back to Ollama
+    Generate response using Ollama, Gemini, or Hugging Face API
+    Tries each service in order until one works
     """
     # Try Google Gemini first (works in production)
     gemini_response = generate_gemini_response(prompt, system_prompt, max_tokens)
     if gemini_response:
         print("[GEMINI] Generated response successfully")
         return gemini_response
+    
+    # Try Hugging Face (free, no API key needed)
+    hf_response = generate_huggingface_response(prompt, max_tokens)
+    if hf_response:
+        print("[HUGGINGFACE] Generated response successfully")
+        return hf_response
     
     # Fall back to Ollama (only works locally)
     try:
