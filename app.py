@@ -142,7 +142,6 @@ def generate_ollama_response(prompt, system_prompt=None, max_tokens=500):
     
     # Fall back to Ollama (only works locally)
     try:
-    try:
         payload = {
             'model': OLLAMA_MODEL,
             'prompt': prompt,
