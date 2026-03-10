@@ -5385,5 +5385,9 @@ def execute_query(query, params=(), fetch_one=False, fetch_all=True, commit=Fals
 
 if __name__ == '__main__':
     init_db()
+    app.run(debug=True)
+else:
+    # Initialize database when running with gunicorn
+    init_db()
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
