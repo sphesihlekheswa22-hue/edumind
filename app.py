@@ -104,25 +104,34 @@ def generate_gemini_response(prompt, system_prompt=None, max_tokens=500):
         # Configure the API
         genai.configure(api_key=GEMINI_API_KEY)
         
-        # Create the model
-        model = genai.GenerativeModel(GEMINI_MODEL)
+        # Try different models
+        models_to_try = ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.0-pro']
         
-        # Build the full prompt
-        full_prompt = prompt
-        if system_prompt:
-            full_prompt = f"System: {system_prompt}\n\nUser: {prompt}"
+        for model_name in models_to_try:
+            try:
+                model = genai.GenerativeModel(model_name)
+                
+                # Build the full prompt
+                full_prompt = prompt
+                if system_prompt:
+                    full_prompt = f"System: {system_prompt}\n\nUser: {prompt}"
+                
+                # Generate response
+                response = model.generate_content(
+                    full_prompt,
+                    generation_config={
+                        'max_output_tokens': max_tokens,
+                        'temperature': 0.7,
+                    }
+                )
+                
+                if response and response.text:
+                    print(f"[GEMINI] Used model: {model_name}")
+                    return response.text.strip()
+            except Exception as e:
+                print(f"[GEMINI] Model {model_name} failed: {str(e)[:50]}")
+                continue
         
-        # Generate response
-        response = model.generate_content(
-            full_prompt,
-            generation_config={
-                'max_output_tokens': max_tokens,
-                'temperature': 0.7,
-            }
-        )
-        
-        if response and response.text:
-            return response.text.strip()
         return None
         
     except Exception as e:
