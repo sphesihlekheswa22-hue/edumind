@@ -33,7 +33,17 @@ app.secret_key = os.environ.get('SECRET_KEY', 'edumind_ai_lms_secret_key_2024_pr
 
 # Database configuration - use absolute path for PythonAnywhere
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_NAME = os.environ.get('DATABASE_PATH', os.path.join(BASE_DIR, 'edumind.db'))
+
+# Check if DATABASE_URL is set (for PostgreSQL on Render)
+database_url = os.environ.get('DATABASE_URL')
+
+if database_url:
+    # Use PostgreSQL on Render
+    import psycopg2
+    DB_NAME = database_url
+else:
+    # Use SQLite locally
+    DB_NAME = os.environ.get('DATABASE_PATH', os.path.join(BASE_DIR, 'edumind.db'))
 
 # Upload folder configuration
 UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(BASE_DIR, 'static/uploads'))
@@ -59,6 +69,16 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_db_connection():
+    # Check if using PostgreSQL (DATABASE_URL set on Render)
+    if os.environ.get('DATABASE_URL'):
+        try:
+            import psycopg2
+            conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+            return conn
+        except ImportError:
+            print("psycopg2 not installed, falling back to SQLite")
+    
+    # Use SQLite
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
