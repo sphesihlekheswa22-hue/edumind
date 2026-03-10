@@ -94,30 +94,35 @@ GEMINI_API_KEY = 'AIzaSyCKr-mpGshEn8Z6vDCIl9hiTdrh3GwkvNY'  # User provided key
 GEMINI_MODEL = 'gemini-1.5-flash-8b'
 
 # Hugging Face API (free, no key needed for basic use)
-HF_API_URL = 'https://api-inference.huggingface.co/models/google/flan-t5-base'
+HF_API_URL = 'https://api-inference.huggingface.co/models/google/flan-t5-small'
 
 def generate_huggingface_response(prompt, max_tokens=200):
     """
     Generate response using Hugging Face Inference API (free)
+    Using flan-t5-small for faster response
     """
     try:
+        print("[HF] Trying Hugging Face API...")
         headers = {"Content-Type": "application/json"}
         payload = {
-            "inputs": prompt,
+            "inputs": prompt[:500],  # Truncate prompt for faster processing
             "parameters": {
-                "max_new_tokens": max_tokens,
+                "max_new_tokens": min(max_tokens, 100),
                 "temperature": 0.7,
             }
         }
-        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=30)
+        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
+        print(f"[HF] Status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
             if isinstance(result, list) and len(result) > 0:
                 return result[0].get('generated_text', '').strip()
+        else:
+            print(f"[HF] Failed: {response.text[:100]}")
         return None
     except Exception as e:
-        print(f"[HF] Error: {str(e)[:50]}")
+        print(f"[HF] Error: {str(e)[:80]}")
         return None
 
 def generate_gemini_response(prompt, system_prompt=None, max_tokens=500):
