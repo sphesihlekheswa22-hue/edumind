@@ -39,7 +39,6 @@ database_url = os.environ.get('DATABASE_URL')
 
 if database_url:
     # Use PostgreSQL on Render
-    import psycopg2
     DB_NAME = database_url
 else:
     # Use SQLite locally
@@ -72,11 +71,11 @@ def get_db_connection():
     # Check if using PostgreSQL (DATABASE_URL set on Render)
     if os.environ.get('DATABASE_URL'):
         try:
-            import psycopg2
-            conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+            import psycopg
+            conn = psycopg.connect(os.environ.get('DATABASE_URL'))
             return conn
         except ImportError:
-            print("psycopg2 not installed, falling back to SQLite")
+            print("psycopg not installed, falling back to SQLite")
     
     # Use SQLite
     conn = sqlite3.connect(DB_NAME)
